@@ -1,35 +1,29 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useMemo, useState } from "react";
+import "./App.css";
+
+import { trades as allTrades } from "./data";
+import { Trades } from "./components/Trades/Trades";
+
+const symbols = [...new Set(allTrades.map((trade) => trade.symbol))].sort();
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [symbol, setSymbol] = useState("");
+  const trades = useMemo(
+    () => allTrades.filter((trade) => trade.symbol === symbol),
+    [symbol]
+  );
 
   return (
     <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
+      <h1>{symbol}</h1>
+        {symbols.map((s) => (
+          <button key={s} onClick={() => setSymbol(s)}>
+            {s}
+          </button>
+        ))}
+      {trades.length > 0 && <Trades trades={trades} />}
     </>
-  )
+  );
 }
 
-export default App
+export default App;
