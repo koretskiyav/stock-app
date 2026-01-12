@@ -72,3 +72,41 @@
 .fontBold {
   font-weight: 700;
 }
+
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  user-select: none;
+}
+
+.cardHeader h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  color: #fff;
+}
+
+.toggleBtn {
+  background: none;
+  border: none;
+  color: #a1a1aa;
+  font-size: 1.2rem;
+  transition: transform 0.2s;
+  cursor: pointer;
+  padding: 0.5rem;
+}
+
+.toggleBtn.expanded {
+  transform: rotate(90deg);
+}
+
+.tableFooter {
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  font-weight: 700;
+  background-color: rgba(255, 255, 255, 0.03);
+}
+
+.tableFooter td {
+  padding: 1rem;
+}

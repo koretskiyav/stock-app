@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import type { Trades as Trade } from "../../data/trades";
 import { formatMoney, formatNumber } from "../../utils/format";
@@ -9,70 +9,92 @@ import cn from "classnames";
 const SummaryTable = ({ 
   data, 
   title, 
-  onRowClick 
+  onRowClick,
+  initiallyExpanded = true
 }: { 
   data: TickerSummary[]; 
   title: string; 
   onRowClick: (symbol: string) => void;
+  initiallyExpanded?: boolean;
 }) => {
+  const [isExpanded, setIsExpanded] = useState(initiallyExpanded);
+
   if (data.length === 0) return null;
+
+  const totalRealizedPL = data.reduce((sum, item) => sum + item.realizedPL, 0);
 
   return (
     <div className={styles.summaryCard}>
-      <h2>{title} ({data.length})</h2>
-      <table className={styles.summaryTable}>
-        <thead>
-          <tr>
-            <th>Symbol</th>
-            <th className={styles.textRight}>Buy Qty</th>
-            <th className={styles.textRight}>Buy Amount</th>
-            <th className={styles.textRight}>Sell Qty</th>
-            <th className={styles.textRight}>Sell Amount</th>
-            <th className={styles.textRight}>Net Qty</th>
-            <th className={styles.textRight}>Realized P/L</th>
-          </tr>
-        </thead>
-        <tbody>
-          {data.map((item) => (
-            <tr 
-              key={item.symbol} 
-              onClick={() => onRowClick(item.symbol)}
-            >
-              <td className={styles.fontBold}>{item.symbol}</td>
-              <td className={cn(styles.textRight, styles.fontMono)}>
-                {formatNumber(item.buyQuantity)}
-              </td>
-              <td className={cn(styles.textRight, styles.fontMono)}>
-                {formatMoney(item.buySum)}
-              </td>
-              <td className={cn(styles.textRight, styles.fontMono)}>
-                {formatNumber(item.sellQuantity)}
-              </td>
-              <td className={cn(styles.textRight, styles.fontMono)}>
-                {formatMoney(item.sellSum)}
-              </td>
-              <td
-                className={cn(
-                  styles.textRight,
-                  styles.fontMono,
-                  { [styles.textBlue]: item.netQuantity > 0 }
-                )}
+      <header className={styles.cardHeader} onClick={() => setIsExpanded(!isExpanded)}>
+        <h2>{title} ({data.length})</h2>
+        <span className={cn(styles.toggleBtn, { [styles.expanded]: isExpanded })}>
+          ▶
+        </span>
+      </header>
+      
+      {isExpanded && (
+        <table className={styles.summaryTable}>
+          <thead>
+            <tr>
+              <th>Symbol</th>
+              <th className={styles.textRight}>Buy Qty</th>
+              <th className={styles.textRight}>Buy Amount</th>
+              <th className={styles.textRight}>Sell Qty</th>
+              <th className={styles.textRight}>Sell Amount</th>
+              <th className={styles.textRight}>Net Qty</th>
+              <th className={styles.textRight}>Realized P/L</th>
+            </tr>
+          </thead>
+          <tbody>
+            {data.map((item) => (
+              <tr 
+                key={item.symbol} 
+                onClick={() => onRowClick(item.symbol)}
               >
-                {formatNumber(item.netQuantity)}
-              </td>
-              <td
-                className={cn(
-                  styles.textRight,
-                  styles.fontMono,
-                  item.realizedPL >= 0 ? styles.textGreen : styles.textRed
-                )}
-              >
-                {formatMoney(item.realizedPL)}
+                <td className={styles.fontBold}>{item.symbol}</td>
+                <td className={cn(styles.textRight, styles.fontMono)}>
+                  {formatNumber(item.buyQuantity)}
+                </td>
+                <td className={cn(styles.textRight, styles.fontMono)}>
+                  {formatMoney(item.buySum)}
+                </td>
+                <td className={cn(styles.textRight, styles.fontMono)}>
+                  {formatNumber(item.sellQuantity)}
+                </td>
+                <td className={cn(styles.textRight, styles.fontMono)}>
+                  {formatMoney(item.sellSum)}
+                </td>
+                <td
+                  className={cn(
+                    styles.textRight,
+                    styles.fontMono,
+                    { [styles.textBlue]: item.netQuantity > 0 }
+                  )}
+                >
+                  {formatNumber(item.netQuantity)}
+                </td>
+                <td
+                  className={cn(
+                    styles.textRight,
+                    styles.fontMono,
+                    item.realizedPL >= 0 ? styles.textGreen : styles.textRed
+                  )}
+                >
+                  {formatMoney(item.realizedPL)}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+          <tfoot>
+            <tr className={styles.tableFooter}>
+              <td colSpan={6} className={styles.fontBold}>Total Realized P/L</td>
+              <td className={cn(styles.textRight, styles.fontMono, totalRealizedPL >= 0 ? styles.textGreen : styles.textRed)}>
+                {formatMoney(totalRealizedPL)}
               </td>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </tfoot>
+        </table>
+      )}
     </div>
   );
 };
@@ -105,7 +127,7 @@ export const PortfolioSummary = ({ trades }: { trades: Trade[] }) => {
     <div className={styles.dashboardContainer}>
       <h1>Portfolio Summary</h1>
       <SummaryTable data={active} title="Active Positions" onRowClick={handleRowClick} />
-      <SummaryTable data={closed} title="Closed Positions" onRowClick={handleRowClick} />
+      <SummaryTable data={closed} title="Closed Positions" onRowClick={handleRowClick} initiallyExpanded={false} />
       <SummaryTable data={anomalies} title="Anomalies (Negative Balance)" onRowClick={handleRowClick} />
     </div>
   );

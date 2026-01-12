@@ -1,4 +1,5 @@
 import data from "../db/trades.json";
+import { applySplits, getSpinoffTrades } from "../utils/corporateActions";
 
 interface RawTrades {
   "Trades": string;
@@ -38,7 +39,7 @@ export interface Trades {
   code: string;
 }
 
-export const trades: Trades[] = (data as RawTrades[]).map(item => ({
+const rawTrades: Trades[] = (data as RawTrades[]).map(item => ({
   trades: item["Trades"],
   header: item["Header"],
   dataDiscriminator: item["DataDiscriminator"],
@@ -56,3 +57,5 @@ export const trades: Trades[] = (data as RawTrades[]).map(item => ({
   mtmPL: Number(item["MTM P/L"] || 0),
   code: item["Code"],
 })).filter(t => t.assetCategory === "Stocks");
+
+export const trades: Trades[] = applySplits([...rawTrades, ...getSpinoffTrades()]);
