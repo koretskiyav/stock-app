@@ -1,8 +1,8 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import type { Trades as Trade } from "../../data/trades";
-import { formatMoney, formatNumber } from "../../utils/format";
 import { calculatePortfolioSummary, type TickerSummary } from "./logic";
+import { Th, Td, MoneyTd, NumberTd } from "../ui";
 import styles from "./PortfolioSummary.module.css";
 import cn from "classnames";
 
@@ -36,13 +36,13 @@ const SummaryTable = ({
         <table className={styles.summaryTable}>
           <thead>
             <tr>
-              <th>Symbol</th>
-              <th className={styles.textRight}>Buy Qty</th>
-              <th className={styles.textRight}>Buy Amount</th>
-              <th className={styles.textRight}>Sell Qty</th>
-              <th className={styles.textRight}>Sell Amount</th>
-              <th className={styles.textRight}>Net Qty</th>
-              <th className={styles.textRight}>Realized P/L</th>
+              <Th>Symbol</Th>
+              <Th align="right">Buy Qty</Th>
+              <Th align="right">Buy Amount</Th>
+              <Th align="right">Sell Qty</Th>
+              <Th align="right">Sell Amount</Th>
+              <Th align="right">Net Qty</Th>
+              <Th align="right">Realized P/L</Th>
             </tr>
           </thead>
           <tbody>
@@ -51,46 +51,20 @@ const SummaryTable = ({
                 key={item.symbol} 
                 onClick={() => onRowClick(item.symbol)}
               >
-                <td className={styles.fontBold}>{item.symbol}</td>
-                <td className={cn(styles.textRight, styles.fontMono)}>
-                  {formatNumber(item.buyQuantity)}
-                </td>
-                <td className={cn(styles.textRight, styles.fontMono)}>
-                  {formatMoney(item.buySum)}
-                </td>
-                <td className={cn(styles.textRight, styles.fontMono)}>
-                  {formatNumber(item.sellQuantity)}
-                </td>
-                <td className={cn(styles.textRight, styles.fontMono)}>
-                  {formatMoney(item.sellSum)}
-                </td>
-                <td
-                  className={cn(
-                    styles.textRight,
-                    styles.fontMono,
-                    { [styles.textBlue]: item.netQuantity > 0 }
-                  )}
-                >
-                  {formatNumber(item.netQuantity)}
-                </td>
-                <td
-                  className={cn(
-                    styles.textRight,
-                    styles.fontMono,
-                    item.realizedPL >= 0 ? styles.textGreen : styles.textRed
-                  )}
-                >
-                  {formatMoney(item.realizedPL)}
-                </td>
+                <Td bold>{item.symbol}</Td>
+                <NumberTd value={item.buyQuantity} />
+                <MoneyTd value={item.buySum} />
+                <NumberTd value={item.sellQuantity} />
+                <MoneyTd value={item.sellSum} />
+                <NumberTd value={item.netQuantity} colorType="blue" />
+                <MoneyTd value={item.realizedPL} colored />
               </tr>
             ))}
           </tbody>
           <tfoot>
             <tr className={styles.tableFooter}>
-              <td colSpan={6} className={styles.fontBold}>Total Realized P/L</td>
-              <td className={cn(styles.textRight, styles.fontMono, totalRealizedPL >= 0 ? styles.textGreen : styles.textRed)}>
-                {formatMoney(totalRealizedPL)}
-              </td>
+              <Td colSpan={6} bold>Total Realized P/L</Td>
+              <MoneyTd value={totalRealizedPL} colored />
             </tr>
           </tfoot>
         </table>
