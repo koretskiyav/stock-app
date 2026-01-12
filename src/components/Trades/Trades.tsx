@@ -1,66 +1,95 @@
 import type { Trades as Trade } from "../../data/trades";
-import styles from "./styles.module.scss";
+import { formatMoney, formatNumber } from "../../utils/format";
+import styles from "./Trades.module.css";
 import cn from "classnames";
 
-const money = (value: number) => Math.round(value * 100) / 100;
-
 export const Trades = ({ trades }: { trades: Trade[] }) => {
+  const totalQuantity = trades.reduce((acc, trade) => acc + trade.quantity, 0);
+  const totalProceeds = trades.reduce((acc, trade) => acc + trade.proceeds, 0);
+  const totalCommFee = trades.reduce((acc, trade) => acc + trade.commFee, 0);
+  const totalRealizedPL = trades.reduce((acc, trade) => acc + trade.realizedPL, 0);
+
   return (
-    <table>
-      <thead>
-        <tr>
-          <th>Date</th>
-          <th>Quantity</th>
-          <th>Trade Price</th>
-          <th>Current Price</th>
-          <th>Proceeds</th>
-          <th>Commission Fee</th>
-          <th>Basis</th>
-          <th>Realized P/L</th>
-        </tr>
-      </thead>
-      <tbody>
-        {trades.map((trade) => {
-          return (
-            <tr
-              key={trade.dateTime}
-              className={trade.quantity > 0 ? styles.buy : styles.sell}
-            >
-              <td>{trade.dateTime}</td>
-              <td>{trade.quantity}</td>
-              <td>{money(trade.tPrice)}</td>
-              <td>{money(trade.cPrice)}</td>
-              <td>{money(trade.proceeds)}</td>
-              <td>{money(trade.commFee)}</td>
-              <td>{money(trade.basis)}</td>
-              <td
-                className={cn({
-                  [styles.profit]: trade.realizedPL > 0,
-                  [styles.loss]: trade.realizedPL < 0,
-                })}
+    <div className={styles.tradesContainer}>
+      <div className={styles.tableCard}>
+        <table className={styles.tradesTable}>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th className={styles.textRight}>Quantity</th>
+              <th className={styles.textRight}>Trade Price</th>
+              <th className={styles.textRight}>Current Price</th>
+              <th className={styles.textRight}>Proceeds</th>
+              <th className={styles.textRight}>Commission Fee</th>
+              <th className={styles.textRight}>Basis</th>
+              <th className={styles.textRight}>Realized P/L</th>
+            </tr>
+          </thead>
+          <tbody>
+            {trades.map((trade) => (
+              <tr
+                key={trade.dateTime + trade.trades} // Assuming dateTime + id is unique enough or use index fallback
+                className={cn(
+                  trade.quantity > 0 ? styles.rowBuy : styles.rowSell
+                )}
               >
-                {money(trade.realizedPL)}
+                <td>{trade.dateTime}</td>
+                <td className={cn(styles.textRight, styles.fontMono)}>
+                  {formatNumber(trade.quantity)}
+                </td>
+                <td className={cn(styles.textRight, styles.fontMono)}>
+                  {formatMoney(trade.tPrice)}
+                </td>
+                <td className={cn(styles.textRight, styles.fontMono)}>
+                  {formatMoney(trade.cPrice)}
+                </td>
+                <td className={cn(styles.textRight, styles.fontMono)}>
+                  {formatMoney(trade.proceeds)}
+                </td>
+                <td className={cn(styles.textRight, styles.fontMono)}>
+                  {formatMoney(trade.commFee)}
+                </td>
+                <td className={cn(styles.textRight, styles.fontMono)}>
+                  {formatMoney(trade.basis)}
+                </td>
+                <td
+                  className={cn(
+                    styles.textRight,
+                    styles.fontMono,
+                    trade.realizedPL >= 0 ? styles.textGreen : styles.textRed
+                  )}
+                >
+                  {formatMoney(trade.realizedPL)}
+                </td>
+              </tr>
+            ))}
+            <tr className={styles.totalRow}>
+              <td className={styles.fontBold}>Total</td>
+              <td className={cn(styles.textRight, styles.fontMono)}>
+                {formatNumber(totalQuantity)}
+              </td>
+              <td></td>
+              <td></td>
+              <td className={cn(styles.textRight, styles.fontMono)}>
+                {formatMoney(totalProceeds)}
+              </td>
+              <td className={cn(styles.textRight, styles.fontMono)}>
+                {formatMoney(totalCommFee)}
+              </td>
+              <td></td>
+              <td
+                className={cn(
+                  styles.textRight,
+                  styles.fontMono,
+                  totalRealizedPL >= 0 ? styles.textGreen : styles.textRed
+                )}
+              >
+                {formatMoney(totalRealizedPL)}
               </td>
             </tr>
-          );
-        })}
-        <tr className={styles.total}>
-          <td>Total</td>
-          <td>{trades.reduce((acc, trade) => acc + trade.quantity, 0)}</td>
-          <td></td>
-          <td></td>
-          <td>
-            {money(trades.reduce((acc, trade) => acc + trade.proceeds, 0))}
-          </td>
-          <td>
-            {money(trades.reduce((acc, trade) => acc + trade.commFee, 0))}
-          </td>
-          <td></td>
-          <td>
-            {money(trades.reduce((acc, trade) => acc + trade.realizedPL, 0))}
-          </td>
-        </tr>
-      </tbody>
-    </table>
+          </tbody>
+        </table>
+      </div>
+    </div>
   );
 };

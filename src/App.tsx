@@ -1,8 +1,16 @@
-import { trades } from "./data/trades";
-import { PortfolioSummary } from "./components/PortfolioSummary/PortfolioSummary";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { HomePage } from "./pages/HomePage";
+import { TradeDetailsPage } from "./pages/TradeDetailsPage";
 
 function App() {
-  return <PortfolioSummary trades={trades} />;
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/trades/:symbol" element={<TradeDetailsPage />} />
+      </Routes>
+    </BrowserRouter>
+  );
 }
 
 export default App;

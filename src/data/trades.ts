@@ -55,4 +55,4 @@ export const trades: Trades[] = (data as RawTrades[]).map(item => ({
   realizedPL: Number(item["Realized P/L"] || 0),
   mtmPL: Number(item["MTM P/L"] || 0),
   code: item["Code"],
-}));
+})).filter(t => t.assetCategory === "Stocks");
