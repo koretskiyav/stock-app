@@ -22,3 +22,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Private Data
+src/db/*
+!src/db/README.md
+src/statements/*
+!src/statements/README.md

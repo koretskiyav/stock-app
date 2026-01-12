@@ -1,18 +1,7 @@
 import styles from "./styles.module.scss";
 import cn from "classnames";
 
-export interface Trade {
-  currency: string;
-  symbol: string;
-  date: string;
-  quantity: number;
-  tPrice: number;
-  cPrice: number;
-  proceeds: number;
-  commFee: number;
-  basis: number;
-  realizedPL: number;
-}
+import type { Trade } from "../../types";
 
 const money = (value: number) => Math.round(value * 100) / 100;
 

@@ -1,146 +1,52 @@
-export const trades = [
-  {
-    currency: "USD",
-    symbol: "META",
-    date: "2024-02-13, 14:35:07",
-    quantity: 1,
-    tPrice: 463.7,
-    cPrice: 460.12,
-    proceeds: -463.7,
-    commFee: -0.35045725,
-    basis: 464.05045725,
-    realizedPL: 0,
-  },
-  {
-    currency: "USD",
-    symbol: "META",
-    date: "2024-04-25, 11:27:57",
-    quantity: 2,
-    tPrice: 427.95,
-    cPrice: 441.38,
-    proceeds: -855.9,
-    commFee: -0.35065725,
-    basis: 856.25065725,
-    realizedPL: 0,
-  },
-  {
-    currency: "USD",
-    symbol: "META",
-    date: "2024-11-11, 11:51:07",
-    quantity: 3,
-    tPrice: 582.34,
-    cPrice: 583.17,
-    proceeds: -1747.02,
-    commFee: -0.35107325,
-    basis: 1747.37107325,
-    realizedPL: 0,
-  },
-  {
-    currency: "USD",
-    symbol: "TSLA",
-    date: "2024-02-13, 14:34:42",
-    quantity: 5,
-    tPrice: 183.189,
-    cPrice: 180.12,
-    proceeds: -915.945,
-    commFee: -0.35107325,
-    basis: 916.29607325,
-    realizedPL: 0,
-  },
-  {
-    currency: "USD",
-    symbol: "TSLA",
-    date: "2024-03-05, 15:02:10",
-    quantity: 5,
-    tPrice: 179.548,
-    cPrice: 180.74,
-    proceeds: -897.74,
-    commFee: -0.35107325,
-    basis: 898.09107325,
-    realizedPL: 0,
-  },
-  {
-    currency: "USD",
-    symbol: "TSLA",
-    date: "2024-03-13, 15:25:36",
-    quantity: 5,
-    tPrice: 170.62,
-    cPrice: 169.48,
-    proceeds: -853.1,
-    commFee: -0.35107325,
-    basis: 853.45107325,
-    realizedPL: 0,
-  },
-  {
-    currency: "USD",
-    symbol: "TSLA",
-    date: "2024-04-18, 10:26:49",
-    quantity: 5,
-    tPrice: 150.62,
-    cPrice: 149.93,
-    proceeds: -753.1,
-    commFee: -0.35107325,
-    basis: 753.45107325,
-    realizedPL: 0,
-  },
-  {
-    currency: "USD",
-    symbol: "TSLA",
-    date: "2024-04-22, 11:03:19",
-    quantity: 5,
-    tPrice: 140,
-    cPrice: 142.05,
-    proceeds: -700,
-    commFee: -0.34065725,
-    basis: 700.34065725,
-    realizedPL: 0,
-  },
-  {
-    currency: "USD",
-    symbol: "TSLA",
-    date: "2024-11-11, 10:05:19",
-    quantity: -10,
-    tPrice: 339.28,
-    cPrice: 350,
-    proceeds: 3392.8,
-    commFee: -0.44895709,
-    basis: -1408.675,
-    realizedPL: 1983.676044,
-  },
-  {
-    currency: "USD",
-    symbol: "TSLA",
-    date: "2024-12-05, 11:25:11",
-    quantity: -5,
-    tPrice: 371.855,
-    cPrice: 369.49,
-    proceeds: 1859.275,
-    commFee: -0.404135095,
-    basis: -641.145,
-    realizedPL: 1217.725865,
-  },
-  {
-    currency: "USD",
-    symbol: "TSLA",
-    date: "2024-12-11, 15:03:13",
-    quantity: -5,
-    tPrice: 420.0805,
-    cPrice: 424.77,
-    proceeds: 2100.4025,
-    commFee: -0.410838439,
-    basis: -879.183114,
-    realizedPL: 1220.808548,
-  },
-  {
-    currency: "USD",
-    symbol: "TSLA",
-    date: "2024-12-17, 15:40:23",
-    quantity: -5,
-    tPrice: 480,
-    cPrice: 479.86,
-    proceeds: 2400,
-    commFee: -0.40854725,
-    basis: -781.996257,
-    realizedPL: 1617.595196,
-  },
-];
+import tradesData from "../db/trades.json";
+import dividendsData from "../db/dividends.json";
+import type { Dividend, Trade } from "../types";
+
+interface RawTrade {
+  Trades: string;
+  Header: string;
+  DataDiscriminator?: string;
+  "Asset Category": string;
+  Currency: string;
+  Symbol: string;
+  "Date/Time": string;
+  Quantity: string;
+  "T-Price": string;
+  "C-Price": string;
+  Proceeds: string;
+  "Comm/Fee": string;
+  Basis: string;
+  "Realized P/L": string;
+  "MTM P/L": string;
+  Code: string;
+}
+
+interface RawDividend {
+  Dividends: string;
+  Header: string;
+  Currency: string;
+  Date: string;
+  Description: string;
+  Amount: string;
+}
+
+export const trades: Trade[] = (tradesData as RawTrade[]).map((t) => ({
+  currency: t["Currency"],
+  symbol: t["Symbol"],
+  date: t["Date/Time"],
+  quantity: Number(t["Quantity"]),
+  tPrice: Number(t["T-Price"]),
+  cPrice: Number(t["C-Price"] || 0),
+  proceeds: Number(t["Proceeds"]),
+  commFee: Number(t["Comm/Fee"]),
+  basis: Number(t["Basis"]),
+  realizedPL: Number(t["Realized P/L"]),
+}));
+
+export const dividends: Dividend[] = (dividendsData as RawDividend[]).map((d) => ({
+  currency: d["Currency"],
+  date: d["Date"],
+  description: d["Description"],
+  amount: Number(d["Amount"]),
+}));
+
