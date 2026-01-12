@@ -9,8 +9,14 @@ interface BaseCellProps {
   className?: string;
 }
 
-export const Th = ({ children, align = "left", className }: BaseCellProps) => (
+export const Th = ({
+  children,
+  align = "left",
+  className,
+  ...props
+}: BaseCellProps & React.ThHTMLAttributes<HTMLTableCellElement>) => (
   <th
+    {...props}
     className={cn(
       styles.headerCell,
       {

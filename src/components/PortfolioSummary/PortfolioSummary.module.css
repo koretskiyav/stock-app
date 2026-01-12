@@ -69,3 +69,28 @@
 .tableFooter td {
   padding: 1rem;
 }
+
+.sortableHeader {
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.sortableHeader:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.headerContent {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.justifyEnd {
+  justify-content: flex-end;
+}
+
+.sortIcon {
+  font-size: 0.8rem;
+  color: #71717a;
+  min-width: 1em;
+}

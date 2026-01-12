@@ -34,7 +34,7 @@ describe("calculatePortfolioSummary", () => {
       createTrade({
         symbol: "AAPL",
         quantity: 10,
-        proceeds: -1500, // Bought for 1500
+        basis: -1500, // Bought for 1500
         realizedPL: 0,
       }),
     ];
@@ -48,6 +48,7 @@ describe("calculatePortfolioSummary", () => {
       sellSum: 0,
       netQuantity: 10,
       realizedPL: 0,
+      avgBuyPrice: 150,
     });
   });
 
@@ -56,7 +57,7 @@ describe("calculatePortfolioSummary", () => {
       createTrade({
         symbol: "AAPL",
         quantity: -5,
-        proceeds: 800, // Sold for 800
+        basis: 800, // Sold for 800
         realizedPL: 50,
       }),
     ];
@@ -69,13 +70,14 @@ describe("calculatePortfolioSummary", () => {
       sellSum: 800,
       netQuantity: -5,
       realizedPL: 50,
+      avgBuyPrice: 0,
     });
   });
 
   it("should aggregate multiple trades for the same symbol", () => {
     const trades = [
-      createTrade({ symbol: "AAPL", quantity: 10, proceeds: -1000, realizedPL: 0 }),
-      createTrade({ symbol: "AAPL", quantity: -5, proceeds: 600, realizedPL: 100 }),
+      createTrade({ symbol: "AAPL", dateTime: "2023-01-01", quantity: 10, basis: -1000, realizedPL: 0 }),
+      createTrade({ symbol: "AAPL", dateTime: "2023-01-02", quantity: -5, basis: 600, realizedPL: 100 }),
     ];
     const result = calculatePortfolioSummary(trades);
     expect(result[0]).toMatchObject({
@@ -86,13 +88,31 @@ describe("calculatePortfolioSummary", () => {
       sellSum: 600,
       netQuantity: 5, // 10 - 5
       realizedPL: 100,
+      avgBuyPrice: 100,
+    });
+  });
+
+  it("should calculate avgBuyPrice using FIFO", () => {
+    const trades = [
+      // Lot 1: 10 @ $100
+      createTrade({ symbol: "AAPL", dateTime: "2023-01-01", quantity: 10, basis: -1000 }),
+      // Lot 2: 10 @ $200
+      createTrade({ symbol: "AAPL", dateTime: "2023-01-02", quantity: 10, basis: -2000 }),
+      // Sell 15: all of Lot 1 (10) and 5 of Lot 2. Remaining: 5 @ $200
+      createTrade({ symbol: "AAPL", dateTime: "2023-01-03", quantity: -15, basis: 3000 }),
+    ];
+    const result = calculatePortfolioSummary(trades);
+    expect(result[0]).toMatchObject({
+      symbol: "AAPL",
+      netQuantity: 5,
+      avgBuyPrice: 200, // Remaining 5 shares are from Lot 2
     });
   });
 
   it("should handle multiple symbols and sort them", () => {
     const trades = [
-      createTrade({ symbol: "MSFT", quantity: 10 }),
-      createTrade({ symbol: "AAPL", quantity: 10 }),
+      createTrade({ symbol: "MSFT", quantity: 10, basis: -500 }),
+      createTrade({ symbol: "AAPL", quantity: 10, basis: -1000 }),
     ];
     const result = calculatePortfolioSummary(trades);
     expect(result).toHaveLength(2);
