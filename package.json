@@ -8,7 +8,8 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "extract": "npx tsx src/script/extract.ts"
+    "extract": "npx tsx src/script/extract.ts",
+    "generate": "npx tsx src/script/generate.ts"
   },
   "dependencies": {
     "classnames": "^2.5.1",

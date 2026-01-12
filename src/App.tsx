@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import "./App.css";
 
-import { trades as allTrades } from "./data";
+import { trades as allTrades } from "./data/trades";
 import { Trades } from "./components/Trades/Trades";
 
 const symbols = [...new Set(allTrades.map((trade) => trade.symbol))].sort();

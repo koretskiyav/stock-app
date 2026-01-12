@@ -6,16 +6,10 @@ import csvToJson from "csvtojson";
 const dataDirectory = path.join(process.cwd(), "src", "statements");
 const dbDirectory = path.join(process.cwd(), "src", "db");
 
-const tables = { trades: "Trades", dividends: "Dividends" };
-
 const renames: Record<string, string> = {
   FRC: "FRCB",
   FB: "META",
 };
-
-type Table = keyof typeof tables;
-
-const keys = Object.keys(tables) as Table[];
 
 async function getFile(fileName: string) {
   const fullPath = path.join(dataDirectory, fileName);
@@ -28,15 +22,14 @@ async function getFiles() {
 }
 
 function groupData(file: string) {
-  const lines = file.replace(new RegExp(". Price", "g"), "-Price").split("\n");
+  const lines = file.replace(new RegExp("\\. Price", "g"), "-Price").split("\n");
   const grouped = _.groupBy(lines, (line) => line.split(",")[0]);
   return _.mapValues(grouped, (val) => val.join("\n"));
 }
 
-async function getJson(group: Record<string, string>, key: Table) {
-  const text = group[tables[key]];
-  if (!text) return [];
-  const json = await csvToJson({ delimiter: "," }).fromString(text);
+async function getSectionJson(sectionCsv: string) {
+  if (!sectionCsv) return [];
+  const json = await csvToJson({ delimiter: "," }).fromString(sectionCsv);
   return json
     .filter((i) => i.Header === "Data")
     .map((i) => ({
@@ -45,23 +38,37 @@ async function getJson(group: Record<string, string>, key: Table) {
     }));
 }
 
-async function writeToDb(data: any, name: string) {
-  const fullPath = path.join(dbDirectory, `${name}.json`);
+async function writeToDb(data: any, originalName: string) {
+  const fileName = _.camelCase(originalName);
+  const fullPath = path.join(dbDirectory, `${fileName}.json`);
   await writeFile(fullPath, JSON.stringify(data, null, 2));
 }
 
 async function main() {
   await mkdir(dbDirectory, { recursive: true });
   const files = await getFiles();
-  const grouped = files.map(groupData);
+  const groupedFiles = files.map(groupData);
 
-  for await (const key of keys) {
-    const data = [];
-    for await (const group of grouped) {
-      const json = await getJson(group, key);
-      data.push(...json);
+  // Collect all unique section names from all files
+  const allSections = new Set<string>();
+  groupedFiles.forEach((group) => {
+    Object.keys(group).forEach((key) => allSections.add(key));
+  });
+
+  for (const sectionName of allSections) {
+    const allDataForSection = [];
+    for (const group of groupedFiles) {
+      const sectionCsv = group[sectionName];
+      if (sectionCsv) {
+        const data = await getSectionJson(sectionCsv);
+        allDataForSection.push(...data);
+      }
     }
-    await writeToDb(data, key);
+
+    if (allDataForSection.length > 0) {
+      await writeToDb(allDataForSection, sectionName);
+      console.log(`Pocessed ${sectionName} -> ${allDataForSection.length} items`);
+    }
   }
 }
 

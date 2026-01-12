@@ -1,7 +1,6 @@
+import type { Trades as Trade } from "../../data/trades";
 import styles from "./styles.module.scss";
 import cn from "classnames";
-
-import type { Trade } from "../../types";
 
 const money = (value: number) => Math.round(value * 100) / 100;
 
@@ -24,10 +23,10 @@ export const Trades = ({ trades }: { trades: Trade[] }) => {
         {trades.map((trade) => {
           return (
             <tr
-              key={trade.date}
+              key={trade.dateTime}
               className={trade.quantity > 0 ? styles.buy : styles.sell}
             >
-              <td>{trade.date}</td>
+              <td>{trade.dateTime}</td>
               <td>{trade.quantity}</td>
               <td>{money(trade.tPrice)}</td>
               <td>{money(trade.cPrice)}</td>
