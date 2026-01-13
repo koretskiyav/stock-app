@@ -117,3 +117,19 @@ export async function fetchFinancials(symbol: string): Promise<Financials | null
   }
   return null;
 }
+/**
+ * Get the latest cached price from localStorage, even if expired.
+ */
+export function getCachedPrice(symbol: string): number | null {
+  const cacheKey = `${CACHE_KEY_PREFIX}${symbol}`;
+  const cachedData = localStorage.getItem(cacheKey);
+  if (cachedData) {
+    try {
+      const cached: CachedQuote = JSON.parse(cachedData);
+      return cached.price;
+    } catch (e) {
+      return null;
+    }
+  }
+  return null;
+}

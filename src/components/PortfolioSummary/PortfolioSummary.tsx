@@ -2,10 +2,12 @@ import { useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import type { Trades as Trade } from "../../data/trades";
 import { calculatePortfolioSummary, type TickerSummary } from "./logic";
-import { Th, Td, MoneyTd, NumberTd } from "../ui";
-import { fetchBatchQuotes } from "../../services/marketData";
+import { Th, Td, MoneyTd, NumberTd, PercentTd } from "../ui";
+import { fetchBatchQuotes, getCachedPrice } from "../../services/marketData";
 import styles from "./PortfolioSummary.module.css";
 import cn from "classnames";
+import { formatMoney } from "../../utils/format";
+import { getLatestCashBalance, getReportedPrices } from "../../data/portfolio";
 
 type SortConfig = {
   key: keyof TickerSummary;
@@ -19,7 +21,8 @@ const SummaryTable = ({
   initiallyExpanded = true,
   showMarketData = false,
   sortConfig,
-  onSort
+  onSort,
+  totalPortfolioValue
 }: { 
   data: TickerSummary[]; 
   title: string; 
@@ -28,6 +31,7 @@ const SummaryTable = ({
   showMarketData?: boolean;
   sortConfig: SortConfig;
   onSort: (key: keyof TickerSummary) => void;
+  totalPortfolioValue?: number;
 }) => {
   const [isExpanded, setIsExpanded] = useState(initiallyExpanded);
 
@@ -73,6 +77,7 @@ const SummaryTable = ({
               {showMarketData && <SortableTh column="currentPrice" label="Price" align="right" />}
               <SortableTh column="netQuantity" label="Net Qty" align="right" />
               {showMarketData && <SortableTh column="marketValue" label="Market Value" align="right" />}
+              {showMarketData && <SortableTh column="portfolioWeight" label="% Share" align="right" />}
               <SortableTh column="realizedPL" label="Realized P/L" align="right" />
               {showMarketData && <SortableTh column="unrealizedPL" label="Unrealized P/L" align="right" />}
             </tr>
@@ -88,6 +93,7 @@ const SummaryTable = ({
                 {showMarketData && <MoneyTd value={item.currentPrice || 0} />}
                 <NumberTd value={item.netQuantity} colorType="blue" />
                 {showMarketData && <MoneyTd value={item.marketValue || 0} />}
+                {showMarketData && <PercentTd value={item.portfolioWeight || 0} />}
                 <MoneyTd value={item.realizedPL} colored />
                 {showMarketData && <MoneyTd value={item.unrealizedPL || 0} colored />}
               </tr>
@@ -97,6 +103,9 @@ const SummaryTable = ({
             <tr className={styles.tableFooter}>
               <Td colSpan={showMarketData ? 4 : 5} bold>Total</Td>
               {showMarketData && <MoneyTd value={totalMarketValue} />}
+              {showMarketData && totalPortfolioValue !== undefined && (
+                <PercentTd value={totalMarketValue / totalPortfolioValue} />
+              )}
               <MoneyTd value={totalRealizedPL} colored />
               {showMarketData && <MoneyTd value={totalUnrealizedPL} colored />}
             </tr>
@@ -110,6 +119,8 @@ const SummaryTable = ({
 export const PortfolioSummary = ({ trades }: { trades: Trade[] }) => {
   const baseSummary = useMemo(() => calculatePortfolioSummary(trades), [trades]);
   const [prices, setPrices] = useState<Map<string, number>>(new Map());
+  const cash = useMemo(() => getLatestCashBalance(), []);
+  
   const [sortConfig, setSortConfig] = useState<SortConfig>({ 
     key: "marketValue", 
     direction: "desc" 
@@ -126,22 +137,44 @@ export const PortfolioSummary = ({ trades }: { trades: Trade[] }) => {
     }
   }, [baseSummary]);
 
+  const reportedPrices = useMemo(() => getReportedPrices(), []);
+
   const rawSummary = useMemo(() => {
     return baseSummary.map(item => {
-      const currentPrice = prices.get(item.symbol);
-      const marketValue = currentPrice !== undefined ? item.netQuantity * currentPrice : 0;
-      const unrealizedPL = currentPrice !== undefined ? marketValue - (item.netQuantity * item.avgBuyPrice) : 0;
+      const livePrice = prices.get(item.symbol);
+      const cachedPrice = getCachedPrice(item.symbol);
+      const reportedPrice = reportedPrices.get(item.symbol) || 0;
+      
+      const currentPrice = livePrice ?? (cachedPrice ?? reportedPrice);
+      
+      const marketValue = item.netQuantity * currentPrice;
+      const unrealizedPL = marketValue - (item.netQuantity * item.avgBuyPrice);
       return { 
         ...item, 
-        currentPrice: currentPrice || 0, 
+        currentPrice, 
         marketValue, 
-        unrealizedPL 
+        unrealizedPL
       };
     });
-  }, [baseSummary, prices]);
+  }, [baseSummary, prices, reportedPrices]);
+
+  const dynamicStockValue = useMemo(() => {
+    return rawSummary.reduce((sum, item) => sum + item.marketValue, 0);
+  }, [rawSummary]);
+
+  const dynamicTotalValue = useMemo(() => {
+    return dynamicStockValue + cash;
+  }, [dynamicStockValue, cash]);
+
+  const summaryWithWeights = useMemo(() => {
+    return rawSummary.map(item => ({
+      ...item,
+      portfolioWeight: dynamicTotalValue > 0 ? item.marketValue / dynamicTotalValue : 0
+    }));
+  }, [rawSummary, dynamicTotalValue]);
 
   const sortedSummary = useMemo(() => {
-    const sortableItems = [...rawSummary];
+    const sortableItems = [...summaryWithWeights];
     sortableItems.sort((a, b) => {
       const aValue = a[sortConfig.key] ?? 0;
       const bValue = b[sortConfig.key] ?? 0;
@@ -155,7 +188,7 @@ export const PortfolioSummary = ({ trades }: { trades: Trade[] }) => {
       return 0;
     });
     return sortableItems;
-  }, [rawSummary, sortConfig]);
+  }, [summaryWithWeights, sortConfig]);
 
   const { active, closed, anomalies } = useMemo(() => {
     const active: TickerSummary[] = [];
@@ -188,6 +221,22 @@ export const PortfolioSummary = ({ trades }: { trades: Trade[] }) => {
   return (
     <div className={styles.dashboardContainer}>
       <h1>Portfolio Summary</h1>
+      
+      <div className={styles.overviewGrid}>
+        <div className={styles.overviewCard}>
+          <span className={styles.label}>Net Asset Value</span>
+          <span className={styles.value}>{formatMoney(dynamicTotalValue)}</span>
+        </div>
+        <div className={styles.overviewCard}>
+          <span className={styles.label}>Stock Value</span>
+          <span className={styles.value}>{formatMoney(dynamicStockValue)}</span>
+        </div>
+        <div className={styles.overviewCard}>
+          <span className={styles.label}>Cash</span>
+          <span className={styles.value}>{formatMoney(cash)}</span>
+        </div>
+      </div>
+
       <SummaryTable 
         data={active} 
         title="Active Positions" 
@@ -195,6 +244,7 @@ export const PortfolioSummary = ({ trades }: { trades: Trade[] }) => {
         showMarketData={true}
         sortConfig={sortConfig}
         onSort={requestSort}
+        totalPortfolioValue={dynamicTotalValue}
       />
       <SummaryTable 
         data={closed} 
@@ -203,6 +253,7 @@ export const PortfolioSummary = ({ trades }: { trades: Trade[] }) => {
         initiallyExpanded={false} 
         sortConfig={sortConfig}
         onSort={requestSort}
+        totalPortfolioValue={dynamicTotalValue}
       />
       <SummaryTable 
         data={anomalies} 
@@ -210,8 +261,11 @@ export const PortfolioSummary = ({ trades }: { trades: Trade[] }) => {
         onRowClick={handleRowClick} 
         sortConfig={sortConfig}
         onSort={requestSort}
+        totalPortfolioValue={dynamicTotalValue}
       />
     </div>
   );
 };
+
+
 

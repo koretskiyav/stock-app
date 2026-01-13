@@ -1,7 +1,7 @@
 import React from "react";
 import cn from "classnames";
 import styles from "./Table.module.css";
-import { formatMoney, formatNumber } from "../../../utils/format";
+import { formatMoney, formatNumber, formatPercent } from "../../../utils/format";
 
 interface BaseCellProps {
   children?: React.ReactNode;
@@ -98,6 +98,17 @@ export const NumberTd = ({
   return (
     <Td align="right" mono {...props} className={cn(colorClass, props.className)}>
       {formatNumber(value)}
+    </Td>
+  );
+};
+
+export const PercentTd = ({
+  value,
+  ...props
+}: ValCellProps) => {
+  return (
+    <Td align="right" mono {...props} className={cn(props.className)}>
+      {formatPercent(value)}
     </Td>
   );
 };

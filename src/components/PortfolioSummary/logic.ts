@@ -12,6 +12,7 @@ export interface TickerSummary {
   currentPrice?: number;
   marketValue?: number;
   unrealizedPL?: number;
+  portfolioWeight?: number;
 }
 
 export function calculatePortfolioSummary(trades: Trade[]): TickerSummary[] {
