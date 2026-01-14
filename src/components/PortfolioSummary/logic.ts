@@ -86,5 +86,70 @@ export function calculatePortfolioSummary(trades: Trade[]): TickerSummary[] {
     }
   }
 
-  return result.sort((a, b) => a.symbol.localeCompare(b.symbol));
+  return result;
+}
+
+export type SortConfig = {
+  key: keyof TickerSummary;
+  direction: "asc" | "desc";
+};
+
+export function enrichSummaryWithMarketData(
+  baseSummary: TickerSummary[],
+  prices: Map<string, number>,
+  reportedPrices: Map<string, number>,
+  cash: number
+) {
+  const summaryWithPrices = baseSummary.map(item => {
+    const currentPrice = prices.get(item.symbol) ?? reportedPrices.get(item.symbol) ?? 0;
+    const marketValue = item.netQuantity * currentPrice;
+    const unrealizedPL = marketValue - (item.netQuantity * item.avgBuyPrice);
+    
+    return { 
+      ...item, 
+      currentPrice, 
+      marketValue, 
+      unrealizedPL
+    };
+  });
+
+  const stockValue = summaryWithPrices.reduce((sum, item) => sum + item.marketValue, 0);
+  const totalValue = stockValue + cash;
+
+  const finalSummary = summaryWithPrices.map(item => ({
+    ...item,
+    portfolioWeight: totalValue > 0 ? item.marketValue / totalValue : 0
+  }));
+
+  return {
+    summary: finalSummary,
+    stockValue,
+    totalValue
+  };
+}
+
+export function sortSummary(
+  data: TickerSummary[],
+  sortConfig: SortConfig
+): TickerSummary[] {
+  return [...data].sort((a, b) => {
+    const aValue = a[sortConfig.key] ?? 0;
+    const bValue = b[sortConfig.key] ?? 0;
+
+    if (aValue < bValue) {
+      return sortConfig.direction === "asc" ? -1 : 1;
+    }
+    if (aValue > bValue) {
+      return sortConfig.direction === "asc" ? 1 : -1;
+    }
+    return 0;
+  });
+}
+
+export function calculateTotals(data: TickerSummary[]) {
+  return {
+    realizedPL: data.reduce((sum, item) => sum + item.realizedPL, 0),
+    marketValue: data.reduce((sum, item) => sum + (item.marketValue || 0), 0),
+    unrealizedPL: data.reduce((sum, item) => sum + (item.unrealizedPL || 0), 0),
+  };
 }

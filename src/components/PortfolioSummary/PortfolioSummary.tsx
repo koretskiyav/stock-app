@@ -1,18 +1,20 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import type { Trades as Trade } from "../../data/trades";
-import { calculatePortfolioSummary, type TickerSummary } from "./logic";
+import { 
+  calculatePortfolioSummary, 
+  enrichSummaryWithMarketData, 
+  sortSummary, 
+  calculateTotals,
+  type TickerSummary, 
+  type SortConfig 
+} from "./logic";
 import { Th, Td, MoneyTd, NumberTd, PercentTd } from "../ui";
-import { fetchBatchQuotes, getCachedPrice } from "../../services/marketData";
+import { fetchBatchQuotes } from "../../services/marketData";
 import styles from "./PortfolioSummary.module.css";
 import cn from "classnames";
 import { formatMoney } from "../../utils/format";
 import { getLatestCashBalance, getReportedPrices } from "../../data/portfolio";
-
-type SortConfig = {
-  key: keyof TickerSummary;
-  direction: "asc" | "desc";
-};
 
 const SummaryTable = ({ 
   data, 
@@ -37,9 +39,7 @@ const SummaryTable = ({
 
   if (data.length === 0) return null;
 
-  const totalRealizedPL = data.reduce((sum, item) => sum + item.realizedPL, 0);
-  const totalMarketValue = data.reduce((sum, item) => sum + (item.marketValue || 0), 0);
-  const totalUnrealizedPL = data.reduce((sum, item) => sum + (item.unrealizedPL || 0), 0);
+  const totals = calculateTotals(data);
 
   const getSortIcon = (key: keyof TickerSummary) => {
     if (sortConfig.key !== key) return "↕";
@@ -102,12 +102,12 @@ const SummaryTable = ({
           <tfoot>
             <tr className={styles.tableFooter}>
               <Td colSpan={showMarketData ? 4 : 5} bold>Total</Td>
-              {showMarketData && <MoneyTd value={totalMarketValue} />}
+              {showMarketData && <MoneyTd value={totals.marketValue} />}
               {showMarketData && totalPortfolioValue !== undefined && (
-                <PercentTd value={totalMarketValue / totalPortfolioValue} />
+                <PercentTd value={totals.marketValue / totalPortfolioValue} />
               )}
-              <MoneyTd value={totalRealizedPL} colored />
-              {showMarketData && <MoneyTd value={totalUnrealizedPL} colored />}
+              <MoneyTd value={totals.realizedPL} colored />
+              {showMarketData && <MoneyTd value={totals.unrealizedPL} colored />}
             </tr>
           </tfoot>
         </table>
@@ -117,16 +117,17 @@ const SummaryTable = ({
 };
 
 export const PortfolioSummary = ({ trades }: { trades: Trade[] }) => {
-  const baseSummary = calculatePortfolioSummary(trades);
+  const navigate = useNavigate();
   const [prices, setPrices] = useState<Map<string, number>>(new Map());
   const [showClosed, setShowClosed] = useState(false);
-  const cash = getLatestCashBalance();
-  
   const [sortConfig, setSortConfig] = useState<SortConfig>({ 
     key: "marketValue", 
     direction: "desc" 
   });
-  const navigate = useNavigate();
+
+  const baseSummary = calculatePortfolioSummary(trades);
+  const cash = getLatestCashBalance();
+  const reportedPrices = getReportedPrices();
 
   useEffect(() => {
     const activeSymbols = baseSummary
@@ -138,57 +139,24 @@ export const PortfolioSummary = ({ trades }: { trades: Trade[] }) => {
     }
   }, [baseSummary]);
 
-  const reportedPrices = getReportedPrices();
-
-  const rawSummary = baseSummary.map(item => {
-    const livePrice = prices.get(item.symbol);
-    const cachedPrice = getCachedPrice(item.symbol);
-    const reportedPrice = reportedPrices.get(item.symbol) || 0;
-    
-    const currentPrice = livePrice ?? (cachedPrice ?? reportedPrice);
-    
-    const marketValue = item.netQuantity * currentPrice;
-    const unrealizedPL = marketValue - (item.netQuantity * item.avgBuyPrice);
-    return { 
-      ...item, 
-      currentPrice, 
-      marketValue, 
-      unrealizedPL
-    };
-  });
-
-  const dynamicStockValue = rawSummary.reduce((sum, item) => sum + item.marketValue, 0);
-
-  const dynamicTotalValue = dynamicStockValue + cash;
-
-  const summaryWithWeights = rawSummary.map(item => ({
-    ...item,
-    portfolioWeight: dynamicTotalValue > 0 ? item.marketValue / dynamicTotalValue : 0
-  }));
+  const { summary, stockValue, totalValue } = enrichSummaryWithMarketData(
+    baseSummary,
+    prices,
+    reportedPrices,
+    cash
+  );
 
   const filteredSummary = showClosed 
-    ? summaryWithWeights 
-    : summaryWithWeights.filter(item => item.netQuantity !== 0);
+    ? summary 
+    : summary.filter(item => item.netQuantity !== 0);
 
-  const sortedSummary = [...filteredSummary].sort((a, b) => {
-    const aValue = a[sortConfig.key] ?? 0;
-    const bValue = b[sortConfig.key] ?? 0;
+  const sortedSummary = sortSummary(filteredSummary, sortConfig);
 
-    if (aValue < bValue) {
-      return sortConfig.direction === "asc" ? -1 : 1;
-    }
-    if (aValue > bValue) {
-      return sortConfig.direction === "asc" ? 1 : -1;
-    }
-    return 0;
-  });
-
-  const requestSort = (key: keyof TickerSummary) => {
-    let direction: "asc" | "desc" = "desc";
-    if (sortConfig.key === key && sortConfig.direction === "desc") {
-      direction = "asc";
-    }
-    setSortConfig({ key, direction });
+  const handleSort = (key: keyof TickerSummary) => {
+    setSortConfig(prev => ({
+      key,
+      direction: prev.key === key && prev.direction === "desc" ? "asc" : "desc"
+    }));
   };
 
   const handleRowClick = (symbol: string) => navigate(`/trades/${symbol}`);
@@ -215,11 +183,11 @@ export const PortfolioSummary = ({ trades }: { trades: Trade[] }) => {
       <div className={styles.overviewGrid}>
         <div className={styles.overviewCard}>
           <span className={styles.label}>Net Asset Value</span>
-          <span className={styles.value}>{formatMoney(dynamicTotalValue)}</span>
+          <span className={styles.value}>{formatMoney(totalValue)}</span>
         </div>
         <div className={styles.overviewCard}>
           <span className={styles.label}>Stock Value</span>
-          <span className={styles.value}>{formatMoney(dynamicStockValue)}</span>
+          <span className={styles.value}>{formatMoney(stockValue)}</span>
         </div>
         <div className={styles.overviewCard}>
           <span className={styles.label}>Cash</span>
@@ -233,8 +201,8 @@ export const PortfolioSummary = ({ trades }: { trades: Trade[] }) => {
         onRowClick={handleRowClick} 
         showMarketData={true}
         sortConfig={sortConfig}
-        onSort={requestSort}
-        totalPortfolioValue={dynamicTotalValue}
+        onSort={handleSort}
+        totalPortfolioValue={totalValue}
       />
     </div>
   );
