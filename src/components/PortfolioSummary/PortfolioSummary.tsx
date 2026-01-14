@@ -119,6 +119,7 @@ const SummaryTable = ({
 export const PortfolioSummary = ({ trades }: { trades: Trade[] }) => {
   const baseSummary = calculatePortfolioSummary(trades);
   const [prices, setPrices] = useState<Map<string, number>>(new Map());
+  const [showClosed, setShowClosed] = useState(false);
   const cash = getLatestCashBalance();
   
   const [sortConfig, setSortConfig] = useState<SortConfig>({ 
@@ -165,7 +166,11 @@ export const PortfolioSummary = ({ trades }: { trades: Trade[] }) => {
     portfolioWeight: dynamicTotalValue > 0 ? item.marketValue / dynamicTotalValue : 0
   }));
 
-  const sortedSummary = [...summaryWithWeights].sort((a, b) => {
+  const filteredSummary = showClosed 
+    ? summaryWithWeights 
+    : summaryWithWeights.filter(item => item.netQuantity !== 0);
+
+  const sortedSummary = [...filteredSummary].sort((a, b) => {
     const aValue = a[sortConfig.key] ?? 0;
     const bValue = b[sortConfig.key] ?? 0;
 
@@ -177,22 +182,6 @@ export const PortfolioSummary = ({ trades }: { trades: Trade[] }) => {
     }
     return 0;
   });
-
-  const active: TickerSummary[] = [];
-  const closed: TickerSummary[] = [];
-  const anomalies: TickerSummary[] = [];
-
-  for (const item of sortedSummary) {
-    if (item.netQuantity > 0) {
-      active.push(item);
-    } else if (item.netQuantity === 0) {
-      closed.push(item);
-    } else {
-      anomalies.push(item);
-    }
-  }
-
-
 
   const requestSort = (key: keyof TickerSummary) => {
     let direction: "asc" | "desc" = "desc";
@@ -206,7 +195,22 @@ export const PortfolioSummary = ({ trades }: { trades: Trade[] }) => {
 
   return (
     <div className={styles.dashboardContainer}>
-      <h1>Portfolio Summary</h1>
+      <header className={styles.dashboardHeader}>
+        <h1>Portfolio Summary</h1>
+        <div className={styles.controlsSection}>
+          <label className={styles.switch}>
+            <input 
+              type="checkbox" 
+              checked={showClosed} 
+              onChange={(e) => setShowClosed(e.target.checked)} 
+            />
+            <span className={styles.slider}></span>
+          </label>
+          <span className={styles.switchLabel} onClick={() => setShowClosed(!showClosed)}>
+            Show Closed Positions
+          </span>
+        </div>
+      </header>
       
       <div className={styles.overviewGrid}>
         <div className={styles.overviewCard}>
@@ -224,27 +228,10 @@ export const PortfolioSummary = ({ trades }: { trades: Trade[] }) => {
       </div>
 
       <SummaryTable 
-        data={active} 
-        title="Active Positions" 
+        data={sortedSummary} 
+        title={showClosed ? "All Positions" : "Active Positions"} 
         onRowClick={handleRowClick} 
         showMarketData={true}
-        sortConfig={sortConfig}
-        onSort={requestSort}
-        totalPortfolioValue={dynamicTotalValue}
-      />
-      <SummaryTable 
-        data={closed} 
-        title="Closed Positions" 
-        onRowClick={handleRowClick} 
-        initiallyExpanded={false} 
-        sortConfig={sortConfig}
-        onSort={requestSort}
-        totalPortfolioValue={dynamicTotalValue}
-      />
-      <SummaryTable 
-        data={anomalies} 
-        title="Anomalies (Negative Balance)" 
-        onRowClick={handleRowClick} 
         sortConfig={sortConfig}
         onSort={requestSort}
         totalPortfolioValue={dynamicTotalValue}
