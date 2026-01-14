@@ -1,4 +1,3 @@
-import { useMemo } from "react";
 import { useParams, Link } from "react-router-dom";
 import { trades as allTrades } from "../data/trades";
 import { Trades } from "../components/Trades/Trades";
@@ -7,10 +6,8 @@ import styles from "./TradeDetailsPage.module.css";
 export const TradeDetailsPage = () => {
   const { symbol } = useParams<{ symbol: string }>();
 
-  const trades = useMemo(() => {
-    if (!symbol) return [];
-    return allTrades.filter((t) => t.symbol === symbol);
-  }, [symbol]);
+  if (!symbol) return [];
+  const trades = allTrades.filter((t) => t.symbol === symbol);
 
   if (!symbol) {
     return <div>Symbol not found</div>;

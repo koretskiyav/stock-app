@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import type { Trades as Trade } from "../../data/trades";
 import { calculatePortfolioSummary, type TickerSummary } from "./logic";
@@ -117,9 +117,9 @@ const SummaryTable = ({
 };
 
 export const PortfolioSummary = ({ trades }: { trades: Trade[] }) => {
-  const baseSummary = useMemo(() => calculatePortfolioSummary(trades), [trades]);
+  const baseSummary = calculatePortfolioSummary(trades);
   const [prices, setPrices] = useState<Map<string, number>>(new Map());
-  const cash = useMemo(() => getLatestCashBalance(), []);
+  const cash = getLatestCashBalance();
   
   const [sortConfig, setSortConfig] = useState<SortConfig>({ 
     key: "marketValue", 
@@ -137,76 +137,62 @@ export const PortfolioSummary = ({ trades }: { trades: Trade[] }) => {
     }
   }, [baseSummary]);
 
-  const reportedPrices = useMemo(() => getReportedPrices(), []);
+  const reportedPrices = getReportedPrices();
 
-  const rawSummary = useMemo(() => {
-    return baseSummary.map(item => {
-      const livePrice = prices.get(item.symbol);
-      const cachedPrice = getCachedPrice(item.symbol);
-      const reportedPrice = reportedPrices.get(item.symbol) || 0;
-      
-      const currentPrice = livePrice ?? (cachedPrice ?? reportedPrice);
-      
-      const marketValue = item.netQuantity * currentPrice;
-      const unrealizedPL = marketValue - (item.netQuantity * item.avgBuyPrice);
-      return { 
-        ...item, 
-        currentPrice, 
-        marketValue, 
-        unrealizedPL
-      };
-    });
-  }, [baseSummary, prices, reportedPrices]);
+  const rawSummary = baseSummary.map(item => {
+    const livePrice = prices.get(item.symbol);
+    const cachedPrice = getCachedPrice(item.symbol);
+    const reportedPrice = reportedPrices.get(item.symbol) || 0;
+    
+    const currentPrice = livePrice ?? (cachedPrice ?? reportedPrice);
+    
+    const marketValue = item.netQuantity * currentPrice;
+    const unrealizedPL = marketValue - (item.netQuantity * item.avgBuyPrice);
+    return { 
+      ...item, 
+      currentPrice, 
+      marketValue, 
+      unrealizedPL
+    };
+  });
 
-  const dynamicStockValue = useMemo(() => {
-    return rawSummary.reduce((sum, item) => sum + item.marketValue, 0);
-  }, [rawSummary]);
+  const dynamicStockValue = rawSummary.reduce((sum, item) => sum + item.marketValue, 0);
 
-  const dynamicTotalValue = useMemo(() => {
-    return dynamicStockValue + cash;
-  }, [dynamicStockValue, cash]);
+  const dynamicTotalValue = dynamicStockValue + cash;
 
-  const summaryWithWeights = useMemo(() => {
-    return rawSummary.map(item => ({
-      ...item,
-      portfolioWeight: dynamicTotalValue > 0 ? item.marketValue / dynamicTotalValue : 0
-    }));
-  }, [rawSummary, dynamicTotalValue]);
+  const summaryWithWeights = rawSummary.map(item => ({
+    ...item,
+    portfolioWeight: dynamicTotalValue > 0 ? item.marketValue / dynamicTotalValue : 0
+  }));
 
-  const sortedSummary = useMemo(() => {
-    const sortableItems = [...summaryWithWeights];
-    sortableItems.sort((a, b) => {
-      const aValue = a[sortConfig.key] ?? 0;
-      const bValue = b[sortConfig.key] ?? 0;
+  const sortedSummary = [...summaryWithWeights].sort((a, b) => {
+    const aValue = a[sortConfig.key] ?? 0;
+    const bValue = b[sortConfig.key] ?? 0;
 
-      if (aValue < bValue) {
-        return sortConfig.direction === "asc" ? -1 : 1;
-      }
-      if (aValue > bValue) {
-        return sortConfig.direction === "asc" ? 1 : -1;
-      }
-      return 0;
-    });
-    return sortableItems;
-  }, [summaryWithWeights, sortConfig]);
-
-  const { active, closed, anomalies } = useMemo(() => {
-    const active: TickerSummary[] = [];
-    const closed: TickerSummary[] = [];
-    const anomalies: TickerSummary[] = [];
-
-    for (const item of sortedSummary) {
-      if (item.netQuantity > 0) {
-        active.push(item);
-      } else if (item.netQuantity === 0) {
-        closed.push(item);
-      } else {
-        anomalies.push(item);
-      }
+    if (aValue < bValue) {
+      return sortConfig.direction === "asc" ? -1 : 1;
     }
+    if (aValue > bValue) {
+      return sortConfig.direction === "asc" ? 1 : -1;
+    }
+    return 0;
+  });
 
-    return { active, closed, anomalies };
-  }, [sortedSummary]);
+  const active: TickerSummary[] = [];
+  const closed: TickerSummary[] = [];
+  const anomalies: TickerSummary[] = [];
+
+  for (const item of sortedSummary) {
+    if (item.netQuantity > 0) {
+      active.push(item);
+    } else if (item.netQuantity === 0) {
+      closed.push(item);
+    } else {
+      anomalies.push(item);
+    }
+  }
+
+
 
   const requestSort = (key: keyof TickerSummary) => {
     let direction: "asc" | "desc" = "desc";
