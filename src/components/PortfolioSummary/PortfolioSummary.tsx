@@ -68,8 +68,10 @@ const SummaryTable = ({
             <SortableTh column="netQuantity" label="Net Qty" align="right" />
             <SortableTh column="marketValue" label="Market Value" align="right" />
             <SortableTh column="portfolioWeight" label="% Share" align="right" />
+            <SortableTh column="dividends" label="Dividends" align="right" />
             <SortableTh column="realizedPL" label="Realized P/L" align="right" />
             <SortableTh column="unrealizedPL" label="Unrealized P/L" align="right" />
+            <SortableTh column="totalGain" label="Total Gain" align="right" />
           </tr>
         </thead>
         <tbody>
@@ -84,8 +86,10 @@ const SummaryTable = ({
               <NumberTd value={item.netQuantity} colorType="blue" />
               <MoneyTd value={item.marketValue || 0} />
               <PercentTd value={item.portfolioWeight || 0} />
+              <MoneyTd value={item.dividends} colored />
               <MoneyTd value={item.realizedPL} colored />
               <MoneyTd value={item.unrealizedPL || 0} colored />
+              <MoneyTd value={item.totalGain || 0} colored />
             </tr>
           ))}
         </tbody>
@@ -96,8 +100,10 @@ const SummaryTable = ({
             {totalPortfolioValue !== undefined && (
               <PercentTd value={totals.marketValue / totalPortfolioValue} />
             )}
+            <MoneyTd value={totals.dividends} colored />
             <MoneyTd value={totals.realizedPL} colored />
             <MoneyTd value={totals.unrealizedPL} colored />
+            <MoneyTd value={totals.totalGain} colored />
           </tr>
         </tfoot>
       </table>

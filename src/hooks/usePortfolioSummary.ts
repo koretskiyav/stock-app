@@ -7,8 +7,10 @@ import type { Trade } from "../data/trades";
 
 import { useMarketPrices } from "./useMarketPrices";
 
+import { dividends } from "../data/dividends";
+
 export function usePortfolioSummary(trades: Trade[], cash: number) {
-  const baseSummary = calculatePortfolioSummary(trades);
+  const baseSummary = calculatePortfolioSummary(trades, dividends);
   
   const activeSymbols = baseSummary
     .filter(item => item.netQuantity > 0)
@@ -21,12 +23,14 @@ export function usePortfolioSummary(trades: Trade[], cash: number) {
     const currentPrice = prices.get(item.symbol) ?? reportedPrices.get(item.symbol) ?? 0;
     const marketValue = item.netQuantity * currentPrice;
     const unrealizedPL = marketValue - (item.netQuantity * item.avgBuyPrice);
+    const totalGain = item.realizedPL + unrealizedPL + item.dividends;
     
     return { 
       ...item, 
       currentPrice, 
       marketValue, 
-      unrealizedPL
+      unrealizedPL,
+      totalGain
     };
   });
 

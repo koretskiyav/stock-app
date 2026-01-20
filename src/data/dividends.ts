@@ -1,28 +1,8 @@
-import data from "../db/dividends.json";
+import { rawDividends } from "../db";
+import { mapDividend, type Dividend } from "./mappers/dividend";
 
-interface RawDividends {
-  "Dividends": string;
-  "Header": string;
-  "Currency": string;
-  "Date": string;
-  "Description": string;
-  "Amount": string;
-}
+export type { Dividend };
 
-export interface Dividends {
-  dividends: string;
-  header: string;
-  currency: string;
-  date: string;
-  description: string;
-  amount: number;
-}
-
-export const dividends: Dividends[] = (data as RawDividends[]).map(item => ({
-  dividends: item["Dividends"],
-  header: item["Header"],
-  currency: item["Currency"],
-  date: item["Date"],
-  description: item["Description"],
-  amount: Number(item["Amount"] || 0),
-}));
+export const dividends: Dividend[] = rawDividends
+  .map(mapDividend)
+  .filter(d => d.header === "Data");

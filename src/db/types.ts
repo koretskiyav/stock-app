@@ -17,6 +17,15 @@ export interface RawTrade {
   "Code": string;
 }
 
+export interface RawDividend {
+  "Dividends": string;
+  "Header": string;
+  "Currency": string;
+  "Date": string;
+  "Description": string;
+  "Amount": string;
+}
+
 export interface RawCorporateAction {
   "Corporate Actions": string;
   "Header": string;

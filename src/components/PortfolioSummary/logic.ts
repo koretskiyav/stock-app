@@ -1,4 +1,5 @@
 import type { Trade } from "../../data/trades";
+import type { Dividend } from "../../data/dividends";
 
 export interface TickerSummary {
   symbol: string;
@@ -9,13 +10,15 @@ export interface TickerSummary {
   netQuantity: number;
   realizedPL: number;
   avgBuyPrice: number;
+  dividends: number;
   currentPrice?: number;
   marketValue?: number;
   unrealizedPL?: number;
+  totalGain?: number;
   portfolioWeight?: number;
 }
 
-export function calculatePortfolioSummary(trades: Trade[]): TickerSummary[] {
+export function calculatePortfolioSummary(trades: Trade[], dividends: Dividend[] = []): TickerSummary[] {
   const map = new Map<string, TickerSummary>();
   const lotsMap = new Map<string, { quantity: number; costBasis: number }[]>();
 
@@ -33,6 +36,7 @@ export function calculatePortfolioSummary(trades: Trade[]): TickerSummary[] {
         netQuantity: 0,
         realizedPL: 0,
         avgBuyPrice: 0,
+        dividends: 0,
       });
       lotsMap.set(trade.symbol, []);
     }
@@ -71,6 +75,12 @@ export function calculatePortfolioSummary(trades: Trade[]): TickerSummary[] {
 
     entry.netQuantity += trade.quantity;
     entry.realizedPL += trade.realizedPL;
+  }
+
+  for (const div of dividends) {
+    if (map.has(div.symbol)) {
+      map.get(div.symbol)!.dividends += div.amount;
+    }
   }
 
   const result = Array.from(map.values());
@@ -118,5 +128,7 @@ export function calculateTotals(data: TickerSummary[]) {
     realizedPL: data.reduce((sum, item) => sum + item.realizedPL, 0),
     marketValue: data.reduce((sum, item) => sum + (item.marketValue || 0), 0),
     unrealizedPL: data.reduce((sum, item) => sum + (item.unrealizedPL || 0), 0),
+    dividends: data.reduce((sum, item) => sum + (item.dividends || 0), 0),
+    totalGain: data.reduce((sum, item) => sum + (item.totalGain || 0), 0),
   };
 }
