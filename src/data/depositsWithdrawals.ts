@@ -1,12 +1,12 @@
-import data from "../db/depositsWithdrawals.json";
+import data from '../db/depositsWithdrawals.json';
 
 interface RawDepositsWithdrawals {
-  "Deposits & Withdrawals": string;
-  "Header": string;
-  "Currency": string;
-  "Settle Date": string;
-  "Description": string;
-  "Amount": string;
+  'Deposits & Withdrawals': string;
+  Header: string;
+  Currency: string;
+  'Settle Date': string;
+  Description: string;
+  Amount: string;
 }
 
 export interface DepositsWithdrawals {
@@ -18,11 +18,13 @@ export interface DepositsWithdrawals {
   amount: number;
 }
 
-export const depositsWithdrawals: DepositsWithdrawals[] = (data as RawDepositsWithdrawals[]).map(item => ({
-  depositsWithdrawals: item["Deposits & Withdrawals"],
-  header: item["Header"],
-  currency: item["Currency"],
-  settleDate: item["Settle Date"],
-  description: item["Description"],
-  amount: Number(item["Amount"] || 0),
-}));
+export const depositsWithdrawals: DepositsWithdrawals[] = (data as RawDepositsWithdrawals[]).map(
+  (item) => ({
+    depositsWithdrawals: item['Deposits & Withdrawals'],
+    header: item['Header'],
+    currency: item['Currency'],
+    settleDate: item['Settle Date'],
+    description: item['Description'],
+    amount: Number(item['Amount'] || 0),
+  }),
+);

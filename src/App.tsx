@@ -1,6 +1,6 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { HomePage } from "./pages/HomePage";
-import { TradeDetailsPage } from "./pages/TradeDetailsPage";
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { HomePage } from './pages/HomePage';
+import { TradeDetailsPage } from './pages/TradeDetailsPage';
 
 function App() {
   return (

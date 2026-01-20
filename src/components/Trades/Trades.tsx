@@ -1,7 +1,7 @@
-import type { Trade } from "../../data/trades";
-import { Th, Td, MoneyTd, NumberTd } from "../ui";
-import styles from "./Trades.module.css";
-import cn from "classnames";
+import type { Trade } from '../../data/trades';
+import { Th, Td, MoneyTd, NumberTd } from '../ui';
+import styles from './Trades.module.css';
+import cn from 'classnames';
 
 export const Trades = ({ trades }: { trades: Trade[] }) => {
   const totalQuantity = trades.reduce((acc, trade) => acc + trade.quantity, 0);
@@ -29,9 +29,7 @@ export const Trades = ({ trades }: { trades: Trade[] }) => {
             {trades.map((trade) => (
               <tr
                 key={trade.dateTime + trade.trades}
-                className={cn(
-                  trade.quantity > 0 ? styles.rowBuy : styles.rowSell
-                )}
+                className={cn(trade.quantity > 0 ? styles.rowBuy : styles.rowSell)}
               >
                 <Td>{trade.dateTime}</Td>
                 <NumberTd value={trade.quantity} />

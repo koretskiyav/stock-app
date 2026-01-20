@@ -1,15 +1,15 @@
-import type { Trade } from "./trade";
-import { SPINOFF_REGEX } from "../filters/spinoff";
-import type { CorporateAction } from "./corporateAction";
+import type { Trade } from './trade';
+import { SPINOFF_REGEX } from '../filters/spinoff';
+import type { CorporateAction } from './corporateAction';
 
 export const mapToSpinoffTrade = (action: CorporateAction): Trade | null => {
   const match = action.description.match(SPINOFF_REGEX);
   if (!match || action.quantity === 0) return null;
 
   return {
-    trades: "Corporate Action",
-    header: "Data",
-    dataDiscriminator: "Spinoff",
+    trades: 'Corporate Action',
+    header: 'Data',
+    dataDiscriminator: 'Spinoff',
     assetCategory: action.assetCategory,
     currency: action.currency,
     symbol: match[1],

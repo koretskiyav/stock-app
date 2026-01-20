@@ -1,5 +1,5 @@
 const API_KEY = import.meta.env.VITE_FINNHUB_API_KEY;
-const BASE_URL = "https://finnhub.io/api/v1";
+const BASE_URL = 'https://finnhub.io/api/v1';
 const CACHE_TIMEOUT = Number(import.meta.env.VITE_CACHE_TIMEOUT_SEC || 600);
 
 export interface Quote {
@@ -13,7 +13,7 @@ interface CachedQuote extends Quote {
   timestamp: number;
 }
 
-const CACHE_KEY_PREFIX = "quote_cache_";
+const CACHE_KEY_PREFIX = 'quote_cache_';
 
 export interface Financials {
   peTTM?: number;
@@ -34,7 +34,7 @@ export async function fetchQuote(symbol: string): Promise<Quote | null> {
     try {
       const cached: CachedQuote = JSON.parse(cachedData);
       const ageSeconds = (now - cached.timestamp) / 1000;
-      
+
       if (ageSeconds < CACHE_TIMEOUT) {
         return cached;
       }
@@ -43,8 +43,8 @@ export async function fetchQuote(symbol: string): Promise<Quote | null> {
     }
   }
 
-  if (!API_KEY || API_KEY === "your_finnhub_key_here") {
-    console.warn("Finnhub API key not set.");
+  if (!API_KEY || API_KEY === 'your_finnhub_key_here') {
+    console.warn('Finnhub API key not set.');
     return null;
   }
 
@@ -72,7 +72,6 @@ export async function fetchQuote(symbol: string): Promise<Quote | null> {
   return null;
 }
 
-
 /**
  * Fetch batch quotes in parallel.
  * While this makes multiple HTTP requests, it is grouped in one action.
@@ -84,10 +83,10 @@ export async function fetchBatchQuotes(symbols: string[]): Promise<Map<string, n
 
   // We fetch in parallel using Promise.all
   // Note: If you have > 30 symbols, we might want to chunk this to avoid bursting.
-  const promises = symbols.map(s => fetchQuote(s));
+  const promises = symbols.map((s) => fetchQuote(s));
   const quotes = await Promise.all(promises);
 
-  quotes.forEach(q => {
+  quotes.forEach((q) => {
     if (q) result.set(q.symbol, q.price);
   });
 
@@ -102,13 +101,15 @@ export async function fetchFinancials(symbol: string): Promise<Financials | null
   if (!API_KEY) return null;
 
   try {
-    const response = await fetch(`${BASE_URL}/stock/metric?symbol=${symbol}&metric=all&token=${API_KEY}`);
+    const response = await fetch(
+      `${BASE_URL}/stock/metric?symbol=${symbol}&metric=all&token=${API_KEY}`,
+    );
     const data = await response.json();
 
     if (data.metric) {
       return {
         peTTM: data.metric.peTTM,
-        peForward: data.metric.peForwardEmpty ? undefined : data.metric["peForward"], // Finnhub naming can be tricky
+        peForward: data.metric.peForwardEmpty ? undefined : data.metric['peForward'], // Finnhub naming can be tricky
         dividendYield: data.metric.dividendYieldIndicatedAnnual,
       };
     }
@@ -127,7 +128,7 @@ export function getCachedPrice(symbol: string): number | null {
     try {
       const cached: CachedQuote = JSON.parse(cachedData);
       return cached.price;
-    } catch (e) {
+    } catch {
       return null;
     }
   }

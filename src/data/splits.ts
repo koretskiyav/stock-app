@@ -1,7 +1,7 @@
-import { corporateActions } from "./corporateActions";
-import { isSplitAction } from "./filters/split";
-import type { CorporateAction } from "./mappers/corporateAction";
-import { mapToSplit, type Split } from "./mappers/split";
+import { corporateActions } from './corporateActions';
+import { isSplitAction } from './filters/split';
+import type { CorporateAction } from './mappers/corporateAction';
+import { mapToSplit, type Split } from './mappers/split';
 
 export type { Split };
 

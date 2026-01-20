@@ -1,5 +1,5 @@
-import { SPLIT_REGEX } from "../filters/split";
-import type { CorporateAction } from "./corporateAction";
+import { SPLIT_REGEX } from '../filters/split';
+import type { CorporateAction } from './corporateAction';
 
 export interface Split {
   symbol: string;

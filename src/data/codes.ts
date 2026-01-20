@@ -1,10 +1,10 @@
-import data from "../db/codes.json";
+import data from '../db/codes.json';
 
 interface RawCodes {
-  "Codes": string;
-  "Header": string;
-  "Code": string;
-  "Meaning": string;
+  Codes: string;
+  Header: string;
+  Code: string;
+  Meaning: string;
 }
 
 export interface Codes {
@@ -14,9 +14,9 @@ export interface Codes {
   meaning: string;
 }
 
-export const codes: Codes[] = (data as RawCodes[]).map(item => ({
-  codes: item["Codes"],
-  header: item["Header"],
-  code: item["Code"],
-  meaning: item["Meaning"],
+export const codes: Codes[] = (data as RawCodes[]).map((item) => ({
+  codes: item['Codes'],
+  header: item['Header'],
+  code: item['Code'],
+  meaning: item['Meaning'],
 }));

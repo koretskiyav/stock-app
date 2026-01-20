@@ -1,7 +1,7 @@
-import { useParams, Link } from "react-router-dom";
-import { trades as allTrades } from "../data/trades";
-import { Trades } from "../components/Trades/Trades";
-import styles from "./TradeDetailsPage.module.css";
+import { useParams, Link } from 'react-router-dom';
+import { trades as allTrades } from '../data/trades';
+import { Trades } from '../components/Trades/Trades';
+import styles from './TradeDetailsPage.module.css';
 
 export const TradeDetailsPage = () => {
   const { symbol } = useParams<{ symbol: string }>();

@@ -1,5 +1,5 @@
-import type { Trade } from "../../data/trades";
-import type { Dividend } from "../../data/dividends";
+import type { Trade } from '../../data/trades';
+import type { Dividend } from '../../data/dividends';
 
 export interface TickerSummary {
   symbol: string;
@@ -18,7 +18,10 @@ export interface TickerSummary {
   portfolioWeight?: number;
 }
 
-export function calculatePortfolioSummary(trades: Trade[], dividends: Dividend[] = []): TickerSummary[] {
+export function calculatePortfolioSummary(
+  trades: Trade[],
+  dividends: Dividend[] = [],
+): TickerSummary[] {
   const map = new Map<string, TickerSummary>();
   const lotsMap = new Map<string, { quantity: number; costBasis: number }[]>();
 
@@ -48,14 +51,14 @@ export function calculatePortfolioSummary(trades: Trade[], dividends: Dividend[]
       entry.buyQuantity += trade.quantity;
       entry.buySum += Math.abs(trade.basis);
       // Add new lot: price per share = basis / quantity
-      lots.push({ 
-        quantity: trade.quantity, 
-        costBasis: Math.abs(trade.basis) 
+      lots.push({
+        quantity: trade.quantity,
+        costBasis: Math.abs(trade.basis),
       });
     } else if (trade.quantity < 0) {
       entry.sellQuantity += Math.abs(trade.quantity);
       entry.sellSum += Math.abs(trade.basis);
-      
+
       // FIFO: Remove shares from the oldest lots
       let qtyToSell = Math.abs(trade.quantity);
       while (qtyToSell > 0 && lots.length > 0) {
@@ -84,7 +87,7 @@ export function calculatePortfolioSummary(trades: Trade[], dividends: Dividend[]
   }
 
   const result = Array.from(map.values());
-  
+
   for (const entry of result) {
     const lots = lotsMap.get(entry.symbol)!;
     if (entry.netQuantity > 0 && lots.length > 0) {
@@ -101,23 +104,19 @@ export function calculatePortfolioSummary(trades: Trade[], dividends: Dividend[]
 
 export type SortConfig = {
   key: keyof TickerSummary;
-  direction: "asc" | "desc";
+  direction: 'asc' | 'desc';
 };
 
-
-export function sortSummary(
-  data: TickerSummary[],
-  sortConfig: SortConfig
-): TickerSummary[] {
+export function sortSummary(data: TickerSummary[], sortConfig: SortConfig): TickerSummary[] {
   return [...data].sort((a, b) => {
     const aValue = a[sortConfig.key] ?? 0;
     const bValue = b[sortConfig.key] ?? 0;
 
     if (aValue < bValue) {
-      return sortConfig.direction === "asc" ? -1 : 1;
+      return sortConfig.direction === 'asc' ? -1 : 1;
     }
     if (aValue > bValue) {
-      return sortConfig.direction === "asc" ? 1 : -1;
+      return sortConfig.direction === 'asc' ? 1 : -1;
     }
     return 0;
   });

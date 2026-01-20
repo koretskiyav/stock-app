@@ -1,3 +1,3 @@
-import type { Trade } from "../mappers/trade";
+import type { Trade } from '../mappers/trade';
 
-export const isStockTrade = (t: Trade): boolean => t.assetCategory === "Stocks";
+export const isStockTrade = (t: Trade): boolean => t.assetCategory === 'Stocks';

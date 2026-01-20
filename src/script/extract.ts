@@ -1,19 +1,19 @@
-import { readdir, readFile, writeFile, mkdir } from "node:fs/promises";
-import path from "node:path";
-import _ from "lodash";
-import csvToJson from "csvtojson";
+import { readdir, readFile, writeFile, mkdir } from 'node:fs/promises';
+import path from 'node:path';
+import _ from 'lodash';
+import csvToJson from 'csvtojson';
 
-const dataDirectory = path.join(process.cwd(), "src", "statements");
-const dbDirectory = path.join(process.cwd(), "src", "db");
+const dataDirectory = path.join(process.cwd(), 'src', 'statements');
+const dbDirectory = path.join(process.cwd(), 'src', 'db');
 
 const renames: Record<string, string> = {
-  FRC: "FRCB",
-  FB: "META",
+  FRC: 'FRCB',
+  FB: 'META',
 };
 
 async function getFile(fileName: string) {
   const fullPath = path.join(dataDirectory, fileName);
-  return readFile(fullPath, "utf8");
+  return readFile(fullPath, 'utf8');
 }
 
 async function getFiles() {
@@ -22,23 +22,23 @@ async function getFiles() {
 }
 
 function groupData(file: string) {
-  const lines = file.replace(new RegExp("\\. Price", "g"), "-Price").split("\n");
-  const grouped = _.groupBy(lines, (line) => line.split(",")[0]);
-  return _.mapValues(grouped, (val) => val.join("\n"));
+  const lines = file.replace(new RegExp('\\. Price', 'g'), '-Price').split('\n');
+  const grouped = _.groupBy(lines, (line) => line.split(',')[0]);
+  return _.mapValues(grouped, (val) => val.join('\n'));
 }
 
 async function getSectionJson(sectionCsv: string) {
   if (!sectionCsv) return [];
-  const json = await csvToJson({ delimiter: "," }).fromString(sectionCsv);
+  const json = await csvToJson({ delimiter: ',' }).fromString(sectionCsv);
   return json
-    .filter((i) => i.Header === "Data")
+    .filter((i) => i.Header === 'Data')
     .map((i) => ({
       ...i,
       ...(i.Symbol && { Symbol: renames[i.Symbol] || i.Symbol }),
     }));
 }
 
-async function writeToDb(data: any, originalName: string) {
+async function writeToDb(data: unknown, originalName: string) {
   const fileName = _.camelCase(originalName);
   const fullPath = path.join(dbDirectory, `${fileName}.json`);
   await writeFile(fullPath, JSON.stringify(data, null, 2));

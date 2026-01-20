@@ -1,13 +1,13 @@
-import { useState } from "react";
+import { useState } from 'react';
 
-export type SortDirection = "asc" | "desc";
+export type SortDirection = 'asc' | 'desc';
 
 export interface SortConfig<T> {
   key: keyof T;
   direction: SortDirection;
 }
 
-export function useSortingConfig<T>(initialKey: keyof T, initialDirection: SortDirection = "desc") {
+export function useSortingConfig<T>(initialKey: keyof T, initialDirection: SortDirection = 'desc') {
   const [sortConfig, setSortConfig] = useState<SortConfig<T>>({
     key: initialKey,
     direction: initialDirection,
@@ -16,7 +16,7 @@ export function useSortingConfig<T>(initialKey: keyof T, initialDirection: SortD
   const onSort = (key: keyof T) => {
     setSortConfig((prev) => ({
       key,
-      direction: prev.key === key && prev.direction === "desc" ? "asc" : "desc",
+      direction: prev.key === key && prev.direction === 'desc' ? 'asc' : 'desc',
     }));
   };
 

@@ -1,10 +1,10 @@
-import data from "../db/accountInformation.json";
+import data from '../db/accountInformation.json';
 
 interface RawAccountInformation {
-  "Account Information": string;
-  "Header": string;
-  "Field Name": string;
-  "Field Value": string;
+  'Account Information': string;
+  Header: string;
+  'Field Name': string;
+  'Field Value': string;
 }
 
 export interface AccountInformation {
@@ -14,9 +14,11 @@ export interface AccountInformation {
   fieldValue: string;
 }
 
-export const accountInformation: AccountInformation[] = (data as RawAccountInformation[]).map(item => ({
-  accountInformation: item["Account Information"],
-  header: item["Header"],
-  fieldName: item["Field Name"],
-  fieldValue: item["Field Value"],
-}));
+export const accountInformation: AccountInformation[] = (data as RawAccountInformation[]).map(
+  (item) => ({
+    accountInformation: item['Account Information'],
+    header: item['Header'],
+    fieldName: item['Field Name'],
+    fieldValue: item['Field Value'],
+  }),
+);

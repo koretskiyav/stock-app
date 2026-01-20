@@ -1,11 +1,11 @@
-import data from "../db/interestAccruals.json";
+import data from '../db/interestAccruals.json';
 
 interface RawInterestAccruals {
-  "Interest Accruals": string;
-  "Header": string;
-  "Currency": string;
-  "Field Name": string;
-  "Field Value": string;
+  'Interest Accruals': string;
+  Header: string;
+  Currency: string;
+  'Field Name': string;
+  'Field Value': string;
 }
 
 export interface InterestAccruals {
@@ -16,10 +16,10 @@ export interface InterestAccruals {
   fieldValue: number;
 }
 
-export const interestAccruals: InterestAccruals[] = (data as RawInterestAccruals[]).map(item => ({
-  interestAccruals: item["Interest Accruals"],
-  header: item["Header"],
-  currency: item["Currency"],
-  fieldName: item["Field Name"],
-  fieldValue: Number(item["Field Value"] || 0),
+export const interestAccruals: InterestAccruals[] = (data as RawInterestAccruals[]).map((item) => ({
+  interestAccruals: item['Interest Accruals'],
+  header: item['Header'],
+  currency: item['Currency'],
+  fieldName: item['Field Name'],
+  fieldValue: Number(item['Field Value'] || 0),
 }));

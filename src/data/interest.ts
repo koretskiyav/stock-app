@@ -1,12 +1,12 @@
-import data from "../db/interest.json";
+import data from '../db/interest.json';
 
 interface RawInterest {
-  "Interest": string;
-  "Header": string;
-  "Currency": string;
-  "Date": string;
-  "Description": string;
-  "Amount": string;
+  Interest: string;
+  Header: string;
+  Currency: string;
+  Date: string;
+  Description: string;
+  Amount: string;
 }
 
 export interface Interest {
@@ -18,11 +18,11 @@ export interface Interest {
   amount: number;
 }
 
-export const interest: Interest[] = (data as RawInterest[]).map(item => ({
-  interest: item["Interest"],
-  header: item["Header"],
-  currency: item["Currency"],
-  date: item["Date"],
-  description: item["Description"],
-  amount: Number(item["Amount"] || 0),
+export const interest: Interest[] = (data as RawInterest[]).map((item) => ({
+  interest: item['Interest'],
+  header: item['Header'],
+  currency: item['Currency'],
+  date: item['Date'],
+  description: item['Description'],
+  amount: Number(item['Amount'] || 0),
 }));
