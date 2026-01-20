@@ -7,7 +7,7 @@
 }
 
 .headerCell {
-  padding: 1rem;
+  padding: 0.4rem 0.6rem;
   color: #a1a1aa;
   font-weight: 600;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
@@ -15,7 +15,7 @@
 }
 
 .dataCell {
-  padding: 1rem;
+  padding: 0.4rem 0.6rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   color: #e4e4e7;
 }
