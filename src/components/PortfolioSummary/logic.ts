@@ -1,4 +1,4 @@
-import type { Trades as Trade } from "../../data/trades";
+import type { Trade } from "../../data/trades";
 
 export interface TickerSummary {
   symbol: string;
@@ -86,7 +86,7 @@ export function calculatePortfolioSummary(trades: Trade[]): TickerSummary[] {
     }
   }
 
-  return result;
+  return result.sort((a, b) => a.symbol.localeCompare(b.symbol));
 }
 
 export type SortConfig = {
@@ -94,39 +94,6 @@ export type SortConfig = {
   direction: "asc" | "desc";
 };
 
-export function enrichSummaryWithMarketData(
-  baseSummary: TickerSummary[],
-  prices: Map<string, number>,
-  reportedPrices: Map<string, number>,
-  cash: number
-) {
-  const summaryWithPrices = baseSummary.map(item => {
-    const currentPrice = prices.get(item.symbol) ?? reportedPrices.get(item.symbol) ?? 0;
-    const marketValue = item.netQuantity * currentPrice;
-    const unrealizedPL = marketValue - (item.netQuantity * item.avgBuyPrice);
-    
-    return { 
-      ...item, 
-      currentPrice, 
-      marketValue, 
-      unrealizedPL
-    };
-  });
-
-  const stockValue = summaryWithPrices.reduce((sum, item) => sum + item.marketValue, 0);
-  const totalValue = stockValue + cash;
-
-  const finalSummary = summaryWithPrices.map(item => ({
-    ...item,
-    portfolioWeight: totalValue > 0 ? item.marketValue / totalValue : 0
-  }));
-
-  return {
-    summary: finalSummary,
-    stockValue,
-    totalValue
-  };
-}
 
 export function sortSummary(
   data: TickerSummary[],

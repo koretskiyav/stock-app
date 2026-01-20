@@ -27,7 +27,5 @@ dist-ssr
 *.sw?
 
 # Private Data
-src/db/*
-!src/db/README.md
-src/statements/*
-!src/statements/README.md
+src/db/*.json
+src/statements/*.csv

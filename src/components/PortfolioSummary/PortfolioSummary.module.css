@@ -102,11 +102,7 @@
 
 
 .cardHeader {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  cursor: pointer;
-  user-select: none;
+  margin-bottom: 1.5rem;
 }
 
 .cardHeader h2 {
@@ -115,19 +111,7 @@
   color: #fff;
 }
 
-.toggleBtn {
-  background: none;
-  border: none;
-  color: #a1a1aa;
-  font-size: 1.2rem;
-  transition: transform 0.2s;
-  cursor: pointer;
-  padding: 0.5rem;
-}
 
-.toggleBtn.expanded {
-  transform: rotate(90deg);
-}
 
 .tableFooter {
   border-top: 1px solid rgba(255, 255, 255, 0.2);

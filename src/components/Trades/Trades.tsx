@@ -1,4 +1,4 @@
-import type { Trades as Trade } from "../../data/trades";
+import type { Trade } from "../../data/trades";
 import { Th, Td, MoneyTd, NumberTd } from "../ui";
 import styles from "./Trades.module.css";
 import cn from "classnames";

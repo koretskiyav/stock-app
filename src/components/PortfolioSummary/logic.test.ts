@@ -1,7 +1,7 @@
 // @ts-ignore
 import { describe, it, expect } from "vitest";
 import { calculatePortfolioSummary } from "./logic";
-import type { Trades as Trade } from "../../data/trades";
+import type { Trade } from "../../data/trades";
 
 const createTrade = (partial: Partial<Trade>): Trade => ({
   trades: "",
