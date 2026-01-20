@@ -1,13 +1,13 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { HomePage } from './pages/HomePage';
-import { TradeDetailsPage } from './pages/TradeDetailsPage';
+import { EventsPage } from './pages/EventsPage';
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<HomePage />} />
-        <Route path="/trades/:symbol" element={<TradeDetailsPage />} />
+        <Route path="/events/:symbol" element={<EventsPage />} />
       </Routes>
     </BrowserRouter>
   );

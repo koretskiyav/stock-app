@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 
 export type SortDirection = 'asc' | 'desc';
 
@@ -8,20 +8,26 @@ export interface SortConfig<T> {
 }
 
 export function useSortingConfig<T>(initialKey: keyof T, initialDirection: SortDirection = 'desc') {
-  const [sortConfig, setSortConfig] = useState<SortConfig<T>>({
-    key: initialKey,
-    direction: initialDirection,
-  });
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const sortKey = (searchParams.get('sort') as keyof T) || initialKey;
+  const sortDir = (searchParams.get('order') as SortDirection) || initialDirection;
 
   const onSort = (key: keyof T) => {
-    setSortConfig((prev) => ({
-      key,
-      direction: prev.key === key && prev.direction === 'desc' ? 'asc' : 'desc',
-    }));
+    const direction = key === sortKey && sortDir === 'desc' ? 'asc' : 'desc';
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.set('sort', String(key));
+      next.set('order', direction);
+      return next;
+    });
   };
 
   return {
-    sortConfig,
+    sortConfig: {
+      key: sortKey,
+      direction: sortDir,
+    },
     onSort,
   };
 }

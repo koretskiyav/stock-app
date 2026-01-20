@@ -1,5 +1,4 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import type { Trade } from '../../data/trades';
 import { sortSummary, calculateTotals, type TickerSummary, type SortConfig } from './logic';
 import { Th, Td, MoneyTd, NumberTd, PercentTd } from '../ui';
@@ -173,8 +172,20 @@ const SummaryTable = ({
 
 export const PortfolioSummary = ({ trades }: { trades: Trade[] }) => {
   const navigate = useNavigate();
-  const [showClosed, setShowClosed] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
   const { sortConfig, onSort } = useSortingConfig<TickerSummary>('marketValue');
+
+  const showClosed = searchParams.get('closed') === 'true';
+  const setShowClosed = (val: boolean) => {
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        if (val) next.set('closed', 'true');
+        else next.delete('closed');
+        return next;
+      },
+    );
+  };
 
   const cash = useCashBalance();
   const summary = usePortfolioSummary(trades, cash);
@@ -185,7 +196,7 @@ export const PortfolioSummary = ({ trades }: { trades: Trade[] }) => {
 
   const sortedSummary = sortSummary(filteredSummary, sortConfig);
 
-  const handleRowClick = (symbol: string) => navigate(`/trades/${symbol}`);
+  const handleRowClick = (symbol: string) => navigate(`/events/${symbol}${window.location.search}`);
 
   return (
     <div className={styles.dashboardContainer}>

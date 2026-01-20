@@ -6,10 +6,11 @@ export function useMarketPrices(symbols: string[]) {
 
   const symbolsKey = symbols.join(',');
   useEffect(() => {
-    if (symbols.length > 0) {
-      fetchBatchQuotes(symbols).then(setPrices);
+    const symbolsArray = symbolsKey.split(',').filter(Boolean);
+    if (symbolsArray.length > 0) {
+      fetchBatchQuotes(symbolsArray).then(setPrices);
     }
-  }, [symbolsKey, symbols]);
+  }, [symbolsKey]);
 
   return prices;
 }
