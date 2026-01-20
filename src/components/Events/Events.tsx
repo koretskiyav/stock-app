@@ -1,9 +1,11 @@
 import type { Trade } from '../../data/trades';
 import type { Dividend } from '../../data/dividends';
 import type { Split } from '../../data/splits';
-import { Th, Td, MoneyTd, NumberTd } from '../ui';
+import { Th, Td, MoneyTd, NumberTd, OverviewCard, OverviewGrid } from '../ui';
+import { type TickerSummary } from '../PortfolioSummary/logic';
 import styles from './Events.module.css';
 import cn from 'classnames';
+import { formatMoney, formatNumber, formatPercent } from '../../utils/format';
 
 type EventType = 'BUY' | 'SELL' | 'DIVIDEND' | 'SPLIT';
 
@@ -22,7 +24,6 @@ interface UnifiedEvent {
 }
 
 const parseDateTime = (dateTime: string) => {
-  // Assuming format like "2023-01-01, 10:00:00" or "2023-01-01"
   const parts = dateTime.split(',');
   return {
     date: parts[0]?.trim() || '',
@@ -34,10 +35,12 @@ export const Events = ({
   trades,
   dividends,
   splits,
+  summary,
 }: {
   trades: Trade[];
   dividends: Dividend[];
   splits: Split[];
+  summary?: TickerSummary;
 }) => {
   const events: UnifiedEvent[] = [
     ...trades.map((t) => {
@@ -90,11 +93,52 @@ export const Events = ({
     }),
   ].sort((a, b) => b.fullDate.localeCompare(a.fullDate));
 
-  const totalRealizedPL = trades.reduce((acc, t) => acc + t.realizedPL, 0);
-  const totalDividends = dividends.reduce((acc, d) => acc + d.amount, 0);
-
   return (
     <div className={styles.eventsContainer}>
+      {summary && (
+        <OverviewGrid>
+          <OverviewCard
+            label="Net Quantity"
+            value={formatNumber(summary.netQuantity)}
+            colorType="blue"
+          />
+          <OverviewCard label="Avg Buy Price" value={formatMoney(summary.avgBuyPrice)} />
+          <OverviewCard label="Current Price" value={formatMoney(summary.currentPrice || 0)} />
+          <OverviewCard label="Market Value" value={formatMoney(summary.marketValue || 0)} />
+          <OverviewCard label="Portfolio Weight" value={formatPercent(summary.portfolioWeight || 0)} />
+          <OverviewCard
+            label="Dividends"
+            value={formatMoney(summary.dividends)}
+            colorType={summary.dividends > 0 ? 'green' : undefined}
+          />
+          <OverviewCard
+            label="Realized P/L"
+            value={formatMoney(summary.realizedPL)}
+            colorType={
+              summary.realizedPL > 0 ? 'green' : summary.realizedPL < 0 ? 'red' : undefined
+            }
+          />
+          <OverviewCard
+            label="Unrealized P/L"
+            value={formatMoney(summary.unrealizedPL || 0)}
+            colorType={
+              (summary.unrealizedPL || 0) > 0
+                ? 'green'
+                : (summary.unrealizedPL || 0) < 0
+                  ? 'red'
+                  : undefined
+            }
+          />
+          <OverviewCard
+            label="Total Gain"
+            value={formatMoney(summary.totalGain || 0)}
+            colorType={
+              (summary.totalGain || 0) > 0 ? 'green' : (summary.totalGain || 0) < 0 ? 'red' : undefined
+            }
+          />
+        </OverviewGrid>
+      )}
+
       <div className={styles.tableCard}>
         <table className={styles.eventsTable}>
           <thead>
@@ -137,24 +181,6 @@ export const Events = ({
               </tr>
             ))}
           </tbody>
-          <tfoot>
-            <tr className={styles.totalRow}>
-              <Td colSpan={4} bold>
-                Total Realized P/L + Dividends
-              </Td>
-              <MoneyTd value={totalDividends} />
-              <Td></Td>
-              <MoneyTd value={totalRealizedPL} />
-            </tr>
-            <tr className={styles.totalRow}>
-              <Td colSpan={4} bold>
-                Combined Total Gain
-              </Td>
-              <Td></Td>
-              <Td></Td>
-              <MoneyTd value={totalRealizedPL + totalDividends} />
-            </tr>
-          </tfoot>
         </table>
       </div>
     </div>

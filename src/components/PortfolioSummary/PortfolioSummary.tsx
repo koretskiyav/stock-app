@@ -1,7 +1,7 @@
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import type { Trade } from '../../data/trades';
 import { sortSummary, calculateTotals, type TickerSummary, type SortConfig } from './logic';
-import { Th, Td, MoneyTd, NumberTd, PercentTd } from '../ui';
+import { Th, Td, MoneyTd, NumberTd, PercentTd, OverviewCard, OverviewGrid } from '../ui';
 import styles from './PortfolioSummary.module.css';
 import cn from 'classnames';
 import { formatMoney } from '../../utils/format';
@@ -217,20 +217,11 @@ export const PortfolioSummary = ({ trades }: { trades: Trade[] }) => {
         </div>
       </header>
 
-      <div className={styles.overviewGrid}>
-        <div className={styles.overviewCard}>
-          <span className={styles.label}>Net Asset Value</span>
-          <span className={styles.value}>{formatMoney(totalValue)}</span>
-        </div>
-        <div className={styles.overviewCard}>
-          <span className={styles.label}>Stock Value</span>
-          <span className={styles.value}>{formatMoney(stockValue)}</span>
-        </div>
-        <div className={styles.overviewCard}>
-          <span className={styles.label}>Cash</span>
-          <span className={styles.value}>{formatMoney(cash)}</span>
-        </div>
-      </div>
+      <OverviewGrid>
+        <OverviewCard label="Net Asset Value" value={formatMoney(totalValue)} />
+        <OverviewCard label="Stock Value" value={formatMoney(stockValue)} />
+        <OverviewCard label="Cash" value={formatMoney(cash)} />
+      </OverviewGrid>
 
       <SummaryTable
         data={sortedSummary}

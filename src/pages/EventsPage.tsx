@@ -3,11 +3,17 @@ import { trades as allTrades } from '../data/trades';
 import { dividends as allDividends } from '../data/dividends';
 import { splits as allSplits } from '../data/splits';
 import { Events } from '../components/Events/Events';
+import { usePortfolioSummary } from '../hooks/usePortfolioSummary';
+import { useCashBalance } from '../hooks/useCashBalance';
 import styles from './EventsPage.module.css';
 
 export const EventsPage = () => {
   const { symbol } = useParams<{ symbol: string }>();
   const [searchParams] = useSearchParams();
+
+  const cash = useCashBalance();
+  const summary = usePortfolioSummary(allTrades, cash);
+  const tickerSummary = summary.find((s) => s.symbol === symbol);
 
   if (!symbol) {
     return <div>Symbol not found</div>;
@@ -25,7 +31,12 @@ export const EventsPage = () => {
         </Link>
         <h1>Events for {symbol}</h1>
       </header>
-      <Events trades={trades} dividends={dividends} splits={splits} />
+      <Events
+        trades={trades}
+        dividends={dividends}
+        splits={splits}
+        summary={tickerSummary}
+      />
     </div>
   );
 };
