@@ -36,26 +36,46 @@
   color: #fff;
 }
 
-.rowBuy {
-  background-color: rgba(74, 222, 128, 0.08);
-}
-
-.rowSell {
-  background-color: rgba(248, 113, 113, 0.08);
-}
-
-.rowDividend {
-  background-color: rgba(96, 165, 250, 0.08);
-}
-
-.rowSplit {
-  background-color: rgba(251, 191, 36, 0.08);
-}
-
 .typeBadge {
-  padding: 0.2rem 0.5rem;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 7px;
+  font-size: 12px;
+  line-height: 20px;
+  white-space: nowrap;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 4px;
-  font-size: 0.75rem;
+  transition: all 0.3s;
   font-weight: 700;
-  text-transform: uppercase;
+}
+
+.type_BUY {
+  color: #52c41a;
+  background: #f6ffed1a;
+  border-color: #b7eb8f4d;
+}
+
+.type_SELL {
+  color: #ff4d4f;
+  background: #fff1f01a;
+  border-color: #ffa39e4d;
+}
+
+.type_DIVIDEND {
+  color: #1890ff;
+  background: #e6f7ff1a;
+  border-color: #91d5ff4d;
+}
+
+.type_SPLIT {
+  color: #af76ff;
+  background: #f9f0ff1a;
+  border-color: #d3adf74d;
+}
+
+.dateCell {
+  cursor: help;
+  border-bottom: 1px dashed rgba(255, 255, 255, 0.1);
+  display: inline-block;
 }
