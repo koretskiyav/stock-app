@@ -1,19 +1,12 @@
+import { cacheService } from './cacheService';
+
 const API_KEY = import.meta.env.VITE_FINNHUB_API_KEY;
 const BASE_URL = 'https://finnhub.io/api/v1';
-const CACHE_TIMEOUT = Number(import.meta.env.VITE_CACHE_TIMEOUT_SEC || 600);
 
 export interface Quote {
   symbol: string;
   price: number;
-  change: number;
-  percentChange: number;
 }
-
-interface CachedQuote extends Quote {
-  timestamp: number;
-}
-
-const CACHE_KEY_PREFIX = 'quote_cache_';
 
 export interface Financials {
   peTTM?: number;
@@ -25,22 +18,10 @@ export interface Financials {
  * Fetch a single quote from Finnhub with localStorage caching.
  */
 export async function fetchQuote(symbol: string): Promise<Quote | null> {
-  const cacheKey = `${CACHE_KEY_PREFIX}${symbol}`;
-  const now = Date.now();
-
   // Try to load from cache
-  const cachedData = localStorage.getItem(cacheKey);
-  if (cachedData) {
-    try {
-      const cached: CachedQuote = JSON.parse(cachedData);
-      const ageSeconds = (now - cached.timestamp) / 1000;
-
-      if (ageSeconds < CACHE_TIMEOUT) {
-        return cached;
-      }
-    } catch (e) {
-      console.error(`Error parsing cache for ${symbol}`, e);
-    }
+  const cached = cacheService.get<Quote>(symbol);
+  if (cached) {
+    return cached;
   }
 
   if (!API_KEY || API_KEY === 'your_finnhub_key_here') {
@@ -53,16 +34,10 @@ export async function fetchQuote(symbol: string): Promise<Quote | null> {
     const data = await response.json();
 
     if (data.c && data.c !== 0) {
-      const quote: Quote = {
-        symbol,
-        price: data.c,
-        change: data.d,
-        percentChange: data.dp,
-      };
+      const quote: Quote = { symbol, price: data.c };
 
       // Store in cache
-      const toCache: CachedQuote = { ...quote, timestamp: now };
-      localStorage.setItem(cacheKey, JSON.stringify(toCache));
+      cacheService.set(symbol, quote);
 
       return quote;
     }
@@ -122,15 +97,18 @@ export async function fetchFinancials(symbol: string): Promise<Financials | null
  * Get the latest cached price from localStorage, even if expired.
  */
 export function getCachedPrice(symbol: string): number | null {
-  const cacheKey = `${CACHE_KEY_PREFIX}${symbol}`;
-  const cachedData = localStorage.getItem(cacheKey);
-  if (cachedData) {
-    try {
-      const cached: CachedQuote = JSON.parse(cachedData);
-      return cached.price;
-    } catch {
-      return null;
+  const cached = cacheService.getLatest<Quote>(symbol);
+  return cached?.price ?? null;
+}
+
+/**
+ * Update the cache with a new price (e.g., from WebSocket).
+ */
+export function updateCachedPrice(symbol: string, price: number): void {
+  cacheService.update<Quote>(symbol, (existing) => {
+    if (existing) {
+      return { ...existing, price };
     }
-  }
-  return null;
+    return { symbol, price };
+  });
 }

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import cn from 'classnames';
 import styles from './Table.module.css';
 import { formatMoney, formatNumber, formatPercent } from '../../../utils/format';
@@ -77,6 +77,43 @@ export const MoneyTd = ({
 
   return (
     <Td align="right" mono {...props} className={cn(colorClass, props.className)}>
+      {formatMoney(value)}
+    </Td>
+  );
+};
+
+export const RealtimeMoneyTd = ({
+  value,
+  colored = false,
+  ...props
+}: ValCellProps & { colored?: boolean }) => {
+  const [prevValue, setPrevValue] = useState(value);
+  const [blinkClass, setBlinkClass] = useState<string | null>(null);
+
+  if (value !== prevValue) {
+    setPrevValue(value);
+    setBlinkClass(value > prevValue ? styles.blinkUp : styles.blinkDown);
+  }
+
+  useEffect(() => {
+    if (blinkClass) {
+      const timer = setTimeout(() => {
+        setBlinkClass(null);
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [blinkClass]);
+
+  const colorClass = colored
+    ? value > 0
+      ? styles.textGreen
+      : value < 0
+        ? styles.textRed
+        : undefined
+    : undefined;
+
+  return (
+    <Td align="right" mono {...props} className={cn(blinkClass, colorClass, props.className)}>
       {formatMoney(value)}
     </Td>
   );

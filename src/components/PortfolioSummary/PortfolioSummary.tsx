@@ -1,7 +1,16 @@
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import type { Trade } from '../../data/trades';
 import { sortSummary, calculateTotals, type TickerSummary, type SortConfig } from './logic';
-import { Th, Td, MoneyTd, NumberTd, PercentTd, OverviewCard, OverviewGrid } from '../ui';
+import {
+  Th,
+  Td,
+  MoneyTd,
+  RealtimeMoneyTd,
+  NumberTd,
+  PercentTd,
+  OverviewCard,
+  OverviewGrid,
+} from '../ui';
 import styles from './PortfolioSummary.module.css';
 import cn from 'classnames';
 import { formatMoney } from '../../utils/format';
@@ -139,7 +148,7 @@ const SummaryTable = ({
             <tr key={item.symbol} onClick={() => onRowClick(item.symbol)}>
               <Td bold>{item.symbol}</Td>
               <MoneyTd value={item.avgBuyPrice} />
-              <MoneyTd value={item.currentPrice || 0} />
+              <RealtimeMoneyTd value={item.currentPrice || 0} />
               <NumberTd value={item.netQuantity} colorType="blue" />
               <MoneyTd value={item.marketValue || 0} />
               <PercentTd value={item.portfolioWeight || 0} />
@@ -177,14 +186,12 @@ export const PortfolioSummary = ({ trades }: { trades: Trade[] }) => {
 
   const showClosed = searchParams.get('closed') === 'true';
   const setShowClosed = (val: boolean) => {
-    setSearchParams(
-      (prev) => {
-        const next = new URLSearchParams(prev);
-        if (val) next.set('closed', 'true');
-        else next.delete('closed');
-        return next;
-      },
-    );
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (val) next.set('closed', 'true');
+      else next.delete('closed');
+      return next;
+    });
   };
 
   const cash = useCashBalance();

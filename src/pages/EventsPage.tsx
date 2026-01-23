@@ -31,12 +31,7 @@ export const EventsPage = () => {
         </Link>
         <h1>Events for {symbol}</h1>
       </header>
-      <Events
-        trades={trades}
-        dividends={dividends}
-        splits={splits}
-        summary={tickerSummary}
-      />
+      <Events trades={trades} dividends={dividends} splits={splits} summary={tickerSummary} />
     </div>
   );
 };
