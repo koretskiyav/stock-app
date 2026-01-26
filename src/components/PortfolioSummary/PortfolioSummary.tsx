@@ -54,6 +54,8 @@ const SummaryTable = ({
   sortConfig,
   onSort,
   totalPortfolioValue,
+  showClosed,
+  onShowClosedChange,
 }: {
   data: TickerSummary[];
   title: string;
@@ -61,6 +63,8 @@ const SummaryTable = ({
   sortConfig: SortConfig;
   onSort: (key: keyof TickerSummary) => void;
   totalPortfolioValue?: number;
+  showClosed: boolean;
+  onShowClosedChange: (val: boolean) => void;
 }) => {
   if (data.length === 0) return null;
 
@@ -72,6 +76,19 @@ const SummaryTable = ({
         <h2>
           {title} ({data.length})
         </h2>
+        <div className={styles.controlsSection}>
+          <label className={styles.switch}>
+            <input
+              type="checkbox"
+              checked={showClosed}
+              onChange={(e) => onShowClosedChange(e.target.checked)}
+            />
+            <span className={styles.slider}></span>
+          </label>
+          <span className={styles.switchLabel} onClick={() => onShowClosedChange(!showClosed)}>
+            Show Closed Positions
+          </span>
+        </div>
       </header>
 
       <table className={styles.summaryTable}>
@@ -196,8 +213,8 @@ export const PortfolioSummary = ({ trades }: { trades: Trade[] }) => {
 
   const cash = useCashBalance();
   const summary = usePortfolioSummary(trades, cash);
-  const stockValue = summary.reduce((sum, item) => sum + (item.marketValue || 0), 0);
-  const totalValue = stockValue + cash;
+  const totals = calculateTotals(summary);
+  const totalValue = totals.marketValue + cash;
 
   const filteredSummary = showClosed ? summary : summary.filter((item) => item.netQuantity !== 0);
 
@@ -209,25 +226,34 @@ export const PortfolioSummary = ({ trades }: { trades: Trade[] }) => {
     <div className={styles.dashboardContainer}>
       <header className={styles.dashboardHeader}>
         <h1>Portfolio Summary</h1>
-        <div className={styles.controlsSection}>
-          <label className={styles.switch}>
-            <input
-              type="checkbox"
-              checked={showClosed}
-              onChange={(e) => setShowClosed(e.target.checked)}
-            />
-            <span className={styles.slider}></span>
-          </label>
-          <span className={styles.switchLabel} onClick={() => setShowClosed(!showClosed)}>
-            Show Closed Positions
-          </span>
-        </div>
       </header>
 
       <OverviewGrid>
         <OverviewCard label="Net Asset Value" value={formatMoney(totalValue)} />
-        <OverviewCard label="Stock Value" value={formatMoney(stockValue)} />
+        <OverviewCard label="Stock Value" value={formatMoney(totals.marketValue)} />
         <OverviewCard label="Cash" value={formatMoney(cash)} />
+        <OverviewCard
+          label="Dividends"
+          value={formatMoney(totals.dividends)}
+          colorType={totals.dividends > 0 ? 'green' : undefined}
+        />
+        <OverviewCard
+          label="Realized P/L"
+          value={formatMoney(totals.realizedPL)}
+          colorType={totals.realizedPL > 0 ? 'green' : totals.realizedPL < 0 ? 'red' : undefined}
+        />
+        <OverviewCard
+          label="Unrealized P/L"
+          value={formatMoney(totals.unrealizedPL)}
+          colorType={
+            totals.unrealizedPL > 0 ? 'green' : totals.unrealizedPL < 0 ? 'red' : undefined
+          }
+        />
+        <OverviewCard
+          label="Total Gain"
+          value={formatMoney(totals.totalGain)}
+          colorType={totals.totalGain > 0 ? 'green' : totals.totalGain < 0 ? 'red' : undefined}
+        />
       </OverviewGrid>
 
       <SummaryTable
@@ -237,6 +263,8 @@ export const PortfolioSummary = ({ trades }: { trades: Trade[] }) => {
         sortConfig={sortConfig}
         onSort={onSort}
         totalPortfolioValue={totalValue}
+        showClosed={showClosed}
+        onShowClosedChange={setShowClosed}
       />
     </div>
   );

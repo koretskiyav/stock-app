@@ -5,8 +5,6 @@
   width: 100%;
 }
 
-
-
 .tableCard {
   background: rgba(255, 255, 255, 0.05);
   backdrop-filter: blur(10px);
@@ -72,4 +70,43 @@
   cursor: help;
   border-bottom: 1px dashed rgba(255, 255, 255, 0.1);
   display: inline-block;
+}
+
+.sectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+  padding: 0 0.5rem;
+}
+
+.sectionTitle {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.collapseButton {
+  background: transparent;
+  border: none;
+  color: #1890ff;
+  cursor: pointer;
+  font-size: 0.88rem;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.collapseButton:hover {
+  background: rgba(24, 144, 255, 0.1);
+}
+
+.totalRow {
+  background: rgba(255, 255, 255, 0.08) !important;
+  font-weight: bold;
+}
+
+.totalRow td {
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  border-bottom: none;
 }

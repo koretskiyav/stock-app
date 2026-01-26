@@ -60,6 +60,7 @@ export const Td = ({
 
 interface ValCellProps extends Omit<BaseCellProps, 'children'> {
   value: number;
+  bold?: boolean;
 }
 
 export const MoneyTd = ({

@@ -60,11 +60,11 @@
   border-radius: 50%;
 }
 
-.switch input:checked+.slider {
+.switch input:checked + .slider {
   background-color: #2563eb;
 }
 
-.switch input:checked+.slider:before {
+.switch input:checked + .slider:before {
   transform: translateX(14px);
 }
 
@@ -104,6 +104,9 @@
 
 .cardHeader {
   margin-bottom: 0.75rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .cardHeader h2 {
