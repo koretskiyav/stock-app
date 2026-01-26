@@ -11,10 +11,11 @@ class CacheService {
     return `${CACHE_KEY_PREFIX}${key}`;
   }
 
-  set<T>(key: string, data: T): void {
-    const cacheData: CachedData<T> = {
+  set<T>(key: string, data: T, customTimeoutSec?: number): void {
+    const cacheData: CachedData<T> & { timeout?: number } = {
       data,
       timestamp: Date.now(),
+      timeout: customTimeoutSec,
     };
     localStorage.setItem(this.getFullKey(key), JSON.stringify(cacheData));
   }
@@ -24,10 +25,11 @@ class CacheService {
     if (!cached) return null;
 
     try {
-      const parsed: CachedData<T> = JSON.parse(cached);
+      const parsed: CachedData<T> & { timeout?: number } = JSON.parse(cached);
       const ageSeconds = (Date.now() - parsed.timestamp) / 1000;
+      const timeout = parsed.timeout ?? CACHE_TIMEOUT;
 
-      if (ageSeconds < CACHE_TIMEOUT) {
+      if (ageSeconds < timeout) {
         return parsed.data;
       }
     } catch (e) {

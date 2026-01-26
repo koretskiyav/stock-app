@@ -63,6 +63,17 @@ export const Events = ({
           <OverviewCard label="Current Price" value={formatMoney(summary.currentPrice || 0)} />
           <OverviewCard label="Market Value" value={formatMoney(summary.marketValue || 0)} />
           <OverviewCard
+            label="Day Change %"
+            value={formatPercent(summary.dailyChangePercent || 0)}
+            colorType={
+              (summary.dailyChangePercent || 0) > 0
+                ? 'green'
+                : (summary.dailyChangePercent || 0) < 0
+                  ? 'red'
+                  : undefined
+            }
+          />
+          <OverviewCard
             label="Portfolio Weight"
             value={formatPercent(summary.portfolioWeight || 0)}
           />

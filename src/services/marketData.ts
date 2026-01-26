@@ -6,12 +6,9 @@ const BASE_URL = 'https://finnhub.io/api/v1';
 export interface Quote {
   symbol: string;
   price: number;
-}
-
-export interface Financials {
-  peTTM?: number;
-  peForward?: number;
-  dividendYield?: number;
+  previousClose: number;
+  change: number;
+  changePercent: number;
 }
 
 /**
@@ -31,10 +28,30 @@ export async function fetchQuote(symbol: string): Promise<Quote | null> {
 
   try {
     const response = await fetch(`${BASE_URL}/quote?symbol=${symbol}&token=${API_KEY}`);
+    if (response.status === 403) {
+      console.warn(`Finnhub quote API 403 for ${symbol}. Plan restriction?`);
+      return null;
+    }
     const data = await response.json();
 
     if (data.c && data.c !== 0) {
-      const quote: Quote = { symbol, price: data.c };
+      // Calculate missing fields or normalize
+      const change =
+        data.d !== null && data.d !== undefined ? data.d : data.pc ? data.c - data.pc : 0;
+      const changePercent =
+        data.dp !== null && data.dp !== undefined
+          ? data.dp / 100
+          : data.pc
+            ? (data.c - data.pc) / data.pc
+            : 0;
+
+      const quote: Quote = {
+        symbol,
+        price: data.c,
+        previousClose: data.pc || data.c - (data.d || 0),
+        change,
+        changePercent,
+      };
 
       // Store in cache
       cacheService.set(symbol, quote);
@@ -49,50 +66,21 @@ export async function fetchQuote(symbol: string): Promise<Quote | null> {
 
 /**
  * Fetch batch quotes in parallel.
- * While this makes multiple HTTP requests, it is grouped in one action.
- * Finnhub's high rate limit (60/min) makes this viable for portfolios.
  */
-export async function fetchBatchQuotes(symbols: string[]): Promise<Map<string, number>> {
-  const result = new Map<string, number>();
+export async function fetchBatchQuotes(symbols: string[]): Promise<Map<string, Quote>> {
+  const result = new Map<string, Quote>();
   if (!API_KEY || symbols.length === 0) return result;
 
-  // We fetch in parallel using Promise.all
-  // Note: If you have > 30 symbols, we might want to chunk this to avoid bursting.
   const promises = symbols.map((s) => fetchQuote(s));
   const quotes = await Promise.all(promises);
 
   quotes.forEach((q) => {
-    if (q) result.set(q.symbol, q.price);
+    if (q) result.set(q.symbol, q);
   });
 
   return result;
 }
 
-/**
- * Fetch basic financials (PE, Forward PE, etc.)
- * Supports your future requirement for fundamental data.
- */
-export async function fetchFinancials(symbol: string): Promise<Financials | null> {
-  if (!API_KEY) return null;
-
-  try {
-    const response = await fetch(
-      `${BASE_URL}/stock/metric?symbol=${symbol}&metric=all&token=${API_KEY}`,
-    );
-    const data = await response.json();
-
-    if (data.metric) {
-      return {
-        peTTM: data.metric.peTTM,
-        peForward: data.metric.peForwardEmpty ? undefined : data.metric['peForward'], // Finnhub naming can be tricky
-        dividendYield: data.metric.dividendYieldIndicatedAnnual,
-      };
-    }
-  } catch (error) {
-    console.error(`Error fetching financials for ${symbol}:`, error);
-  }
-  return null;
-}
 /**
  * Get the latest cached price from localStorage, even if expired.
  */
@@ -107,8 +95,16 @@ export function getCachedPrice(symbol: string): number | null {
 export function updateCachedPrice(symbol: string, price: number): void {
   cacheService.update<Quote>(symbol, (existing) => {
     if (existing) {
-      return { ...existing, price };
+      const change = price - existing.previousClose;
+      const changePercent = existing.previousClose !== 0 ? change / existing.previousClose : 0;
+      return { ...existing, price, change, changePercent };
     }
-    return { symbol, price };
+    return {
+      symbol,
+      price,
+      previousClose: price,
+      change: 0,
+      changePercent: 0,
+    };
   });
 }

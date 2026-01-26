@@ -96,6 +96,13 @@ const SummaryTable = ({
           <tr>
             <SortableTh column="symbol" label="Symbol" sortConfig={sortConfig} onSort={onSort} />
             <SortableTh
+              column="dailyChangePercent"
+              label="Day Chg %"
+              align="right"
+              sortConfig={sortConfig}
+              onSort={onSort}
+            />
+            <SortableTh
               column="avgBuyPrice"
               label="Avg Buy"
               align="right"
@@ -118,7 +125,7 @@ const SummaryTable = ({
             />
             <SortableTh
               column="marketValue"
-              label="Market Value"
+              label="Value"
               align="right"
               sortConfig={sortConfig}
               onSort={onSort}
@@ -132,21 +139,21 @@ const SummaryTable = ({
             />
             <SortableTh
               column="dividends"
-              label="Dividends"
+              label="Divs"
               align="right"
               sortConfig={sortConfig}
               onSort={onSort}
             />
             <SortableTh
               column="realizedPL"
-              label="Realized P/L"
+              label="Real. P/L"
               align="right"
               sortConfig={sortConfig}
               onSort={onSort}
             />
             <SortableTh
               column="unrealizedPL"
-              label="Unrealized P/L"
+              label="Unreal. P/L"
               align="right"
               sortConfig={sortConfig}
               onSort={onSort}
@@ -164,6 +171,7 @@ const SummaryTable = ({
           {data.map((item) => (
             <tr key={item.symbol} onClick={() => onRowClick(item.symbol)}>
               <Td bold>{item.symbol}</Td>
+              <PercentTd value={item.dailyChangePercent || 0} colored />
               <MoneyTd value={item.avgBuyPrice} />
               <RealtimeMoneyTd value={item.currentPrice || 0} />
               <NumberTd value={item.netQuantity} colorType="blue" />
@@ -178,17 +186,20 @@ const SummaryTable = ({
         </tbody>
         <tfoot>
           <tr className={styles.tableFooter}>
-            <Td colSpan={4} bold>
+            <Td colSpan={2} bold>
               Total
             </Td>
-            <MoneyTd value={totals.marketValue} />
+            <Td />
+            <Td />
+            <Td />
+            <MoneyTd value={totals.marketValue} bold />
             {totalPortfolioValue !== undefined && (
-              <PercentTd value={totals.marketValue / totalPortfolioValue} />
+              <PercentTd value={totals.marketValue / totalPortfolioValue} bold />
             )}
-            <MoneyTd value={totals.dividends} colored />
-            <MoneyTd value={totals.realizedPL} colored />
-            <MoneyTd value={totals.unrealizedPL} colored />
-            <MoneyTd value={totals.totalGain} colored />
+            <MoneyTd value={totals.dividends} colored bold />
+            <MoneyTd value={totals.realizedPL} colored bold />
+            <MoneyTd value={totals.unrealizedPL} colored bold />
+            <MoneyTd value={totals.totalGain} colored bold />
           </tr>
         </tfoot>
       </table>
@@ -232,6 +243,12 @@ export const PortfolioSummary = ({ trades }: { trades: Trade[] }) => {
         <OverviewCard label="Net Asset Value" value={formatMoney(totalValue)} />
         <OverviewCard label="Stock Value" value={formatMoney(totals.marketValue)} />
         <OverviewCard label="Cash" value={formatMoney(cash)} />
+        <OverviewCard
+          label="Day Change"
+          value={formatMoney(totals.dailyChange)}
+          colorType={totals.dailyChange > 0 ? 'green' : totals.dailyChange < 0 ? 'red' : undefined}
+          animateOnChange
+        />
         <OverviewCard
           label="Dividends"
           value={formatMoney(totals.dividends)}

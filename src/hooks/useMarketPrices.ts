@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
-import { fetchBatchQuotes, updateCachedPrice } from '../services/marketData';
+import { fetchBatchQuotes, updateCachedPrice, type Quote } from '../services/marketData';
 import { marketDataStream } from '../services/marketDataStream';
 
 export function useMarketPrices(symbols: string[]) {
-  const [prices, setPrices] = useState<Map<string, number>>(new Map());
+  const [quotes, setQuotes] = useState<Map<string, Quote>>(new Map());
 
   const symbolsKey = symbols.join(',');
 
@@ -12,11 +12,11 @@ export function useMarketPrices(symbols: string[]) {
     if (symbolsArray.length === 0) return;
 
     // Initial fetch
-    fetchBatchQuotes(symbolsArray).then((initialPrices) => {
-      setPrices((prev) => {
+    fetchBatchQuotes(symbolsArray).then((initialQuotes) => {
+      setQuotes((prev) => {
         const next = new Map(prev);
-        initialPrices.forEach((price, symbol) => {
-          next.set(symbol, price);
+        initialQuotes.forEach((quote, symbol) => {
+          next.set(symbol, quote);
         });
         return next;
       });
@@ -24,12 +24,27 @@ export function useMarketPrices(symbols: string[]) {
 
     // Subscribe to real-time updates
     const handlePriceUpdate = (symbol: string, price: number) => {
-      // Save to cache
+      // Save to cache and update state
       updateCachedPrice(symbol, price);
 
-      setPrices((prev) => {
+      setQuotes((prev) => {
         const next = new Map(prev);
-        next.set(symbol, price);
+        const existing = next.get(symbol);
+        if (existing) {
+          const change = price - existing.previousClose;
+          const changePercent = (change / existing.previousClose) * 100;
+          next.set(symbol, { ...existing, price, change, changePercent });
+        } else {
+          // If we don't have existing quote, it's safer to not update yet
+          // or create a partial one. But fetchBatchQuotes should have run already.
+          next.set(symbol, {
+            symbol,
+            price,
+            previousClose: price,
+            change: 0,
+            changePercent: 0,
+          });
+        }
         return next;
       });
     };
@@ -45,5 +60,5 @@ export function useMarketPrices(symbols: string[]) {
     };
   }, [symbolsKey]);
 
-  return prices;
+  return quotes;
 }

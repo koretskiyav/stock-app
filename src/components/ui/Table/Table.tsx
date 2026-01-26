@@ -143,9 +143,21 @@ export const NumberTd = ({
   );
 };
 
-export const PercentTd = ({ value, ...props }: ValCellProps) => {
+export const PercentTd = ({
+  value,
+  colored = false,
+  ...props
+}: ValCellProps & { colored?: boolean }) => {
+  const colorClass = colored
+    ? value > 0
+      ? styles.textGreen
+      : value < 0
+        ? styles.textRed
+        : undefined
+    : undefined;
+
   return (
-    <Td align="right" mono {...props} className={cn(props.className)}>
+    <Td align="right" mono {...props} className={cn(colorClass, props.className)}>
       {formatPercent(value)}
     </Td>
   );

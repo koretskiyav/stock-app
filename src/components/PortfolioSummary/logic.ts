@@ -16,6 +16,8 @@ export interface TickerSummary {
   unrealizedPL?: number;
   totalGain?: number;
   portfolioWeight?: number;
+  dailyChange?: number;
+  dailyChangePercent?: number;
 }
 
 export function calculatePortfolioSummary(
@@ -129,5 +131,6 @@ export function calculateTotals(data: TickerSummary[]) {
     unrealizedPL: data.reduce((sum, item) => sum + (item.unrealizedPL || 0), 0),
     dividends: data.reduce((sum, item) => sum + (item.dividends || 0), 0),
     totalGain: data.reduce((sum, item) => sum + (item.totalGain || 0), 0),
+    dailyChange: data.reduce((sum, item) => sum + (item.dailyChange || 0), 0),
   };
 }

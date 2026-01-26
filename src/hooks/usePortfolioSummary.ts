@@ -13,17 +13,21 @@ export function usePortfolioSummary(trades: Trade[], cash: number) {
   const baseSummary = calculatePortfolioSummary(trades, dividends);
 
   const activeSymbols = baseSummary
-    .filter((item) => item.netQuantity > 0)
+    .filter((item) => item.netQuantity !== 0)
     .map((item) => item.symbol);
 
-  const prices = useMarketPrices(activeSymbols);
+  const quotes = useMarketPrices(activeSymbols);
   const reportedPrices = getReportedPrices();
 
   const summary: TickerSummary[] = baseSummary.map((item) => {
-    const currentPrice = prices.get(item.symbol) ?? reportedPrices.get(item.symbol) ?? 0;
+    const quote = quotes.get(item.symbol);
+    const currentPrice = quote?.price ?? reportedPrices.get(item.symbol) ?? 0;
     const marketValue = item.netQuantity * currentPrice;
     const unrealizedPL = marketValue - item.netQuantity * item.avgBuyPrice;
     const totalGain = item.realizedPL + unrealizedPL + item.dividends;
+
+    const dailyChange = item.netQuantity * (quote?.change ?? 0);
+    const dailyChangePercent = quote?.changePercent ?? 0;
 
     return {
       ...item,
@@ -31,6 +35,8 @@ export function usePortfolioSummary(trades: Trade[], cash: number) {
       marketValue,
       unrealizedPL,
       totalGain,
+      dailyChange,
+      dailyChangePercent,
     };
   });
 
