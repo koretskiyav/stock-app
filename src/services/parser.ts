@@ -1,36 +1,47 @@
-export interface Trade {
-  symbol: string;
-  dateTime: string;
-  quantity: number;
-  tPrice: number;
-  proceeds: number;
-  commFee: number;
-  basis: number;
-  realizedPL: number;
-}
+import { z } from 'zod';
+import Papa from 'papaparse';
 
-export interface Dividend {
-  date: string;
-  amount: number;
-  symbol: string;
-  perShare: number;
-  quantity: number;
-}
+export const TradeSchema = z.object({
+  symbol: z.string(),
+  dateTime: z.string(),
+  quantity: z.number(),
+  tPrice: z.number(),
+  proceeds: z.number(),
+  commFee: z.number(),
+  basis: z.number(),
+  realizedPL: z.number(),
+});
 
-export interface Split {
-  symbol: string;
-  ratio: number;
-  date: string;
-}
+export type Trade = z.infer<typeof TradeSchema>;
 
-export interface StatementsData {
-  trades: Trade[];
-  splits: Split[];
-  dividends: Dividend[];
-  cash: number;
-}
+export const DividendSchema = z.object({
+  date: z.string(),
+  amount: z.number(),
+  symbol: z.string(),
+  perShare: z.number(),
+  quantity: z.number(),
+});
 
-const SPLIT_REGEX = /(.+)\s+Split\s+(\d+)\s+FOR\s+(\d+)\s+/i;
+export type Dividend = z.infer<typeof DividendSchema>;
+
+export const SplitSchema = z.object({
+  symbol: z.string(),
+  ratio: z.number(),
+  date: z.string(),
+});
+
+export type Split = z.infer<typeof SplitSchema>;
+
+export const StatementsDataSchema = z.object({
+  trades: z.array(TradeSchema),
+  splits: z.array(SplitSchema),
+  dividends: z.array(DividendSchema),
+  cash: z.number(),
+});
+
+export type StatementsData = z.infer<typeof StatementsDataSchema>;
+
+const SPLIT_REGEX = /(.+)\s+Split\s+(\d+)\s+FOR\s+(\d+)\s*/i;
 const SPINOFF_REGEX = /^.*\(.*\)\s+Spinoff\s+.*\(([^,]+),/;
 
 const SYMBOL_RENAMES: Record<string, string> = {
@@ -42,28 +53,6 @@ export function renameSymbol(symbol: string): string {
   if (!symbol) return '';
   const cleanSymbol = symbol.split('(')[0].trim().toUpperCase();
   return SYMBOL_RENAMES[cleanSymbol] || cleanSymbol;
-}
-
-function parseCsvLine(line: string): string[] {
-  const result: string[] = [];
-  let current = '';
-  let inQuotes = false;
-
-  for (let i = 0; i < line.length; i++) {
-    const char = line[i];
-
-    if (char === '"') {
-      inQuotes = !inQuotes;
-    } else if (char === ',' && !inQuotes) {
-      result.push(current.trim());
-      current = '';
-    } else {
-      current += char;
-    }
-  }
-  result.push(current.trim());
-
-  return result.map((val) => val.replace(/^"|"$/g, '').trim());
 }
 
 function mapToTrade(item: Record<string, string>): Trade {
@@ -84,8 +73,13 @@ function mapToSplit(item: Record<string, string>): Split | null {
   const match = description.match(SPLIT_REGEX);
   if (!match) return null;
 
-  const symbolMatch = description.match(/^([A-Z.]+)/);
-  const symbol = symbolMatch ? renameSymbol(symbolMatch[1]) : renameSymbol(match[1].trim());
+  // Try to find symbol in parentheses first (e.g., "... (GOOG)")
+  const parenMatch = description.match(/\(([^)]+)\)$/);
+  const symbol = parenMatch
+    ? renameSymbol(parenMatch[1])
+    : description.match(/^([A-Z.]+)/)
+      ? renameSymbol(description.match(/^([A-Z.]+)/)![1])
+      : renameSymbol(match[1].trim());
 
   const x = parseInt(match[2], 10);
   const y = parseInt(match[3], 10);
@@ -139,9 +133,9 @@ function mapToDividend(item: Record<string, string>): Dividend {
 }
 
 /**
- * Reads all CSV lines from the statements directory.
+ * Reads all CSV contents from the statements directory.
  */
-export function getAllStatementLines(): string[] {
+export function getAllStatementContents(): string[] {
   // Dynamically import all CSV files from the statements directory using Vite's glob import.
   const csvModules = import.meta.glob('../statements/*.csv', {
     query: '?raw',
@@ -150,76 +144,84 @@ export function getAllStatementLines(): string[] {
 
   return Object.values(csvModules).flatMap((module) => {
     const content = typeof module === 'string' ? module : (module as { default: string }).default;
-    return content.split('\n');
+    return content;
   });
 }
 
-export function parseStatements(csv: string[]): StatementsData {
+export function parseStatements(csvContents: string[]): StatementsData {
   const tradesMap = new Map<string, Trade>();
   const splitsMap = new Map<string, Split>();
   const spinoffs: Trade[] = [];
   const dividendsMap = new Map<string, Dividend>();
   let cash = 0;
 
-  const sectionHeaders: Record<string, string[]> = {};
+  for (const content of csvContents) {
+    const results = Papa.parse<string[]>(content, {
+      skipEmptyLines: 'greedy',
+    });
 
-  for (const line of csv) {
-    if (!line.trim()) continue;
+    const rows = results.data;
+    const sectionHeaders: Record<string, string[]> = {};
 
-    const values = parseCsvLine(line);
-    if (values.length < 2) continue;
+    for (const values of rows) {
+      if (values.length < 2) continue;
 
-    const section = values[0];
-    const headerType = values[1];
+      const section = values[0];
+      const headerType = values[1];
 
-    if (headerType === 'Header') {
-      sectionHeaders[section] = values;
-      continue;
-    }
-
-    if (headerType === 'Data') {
-      const headers = sectionHeaders[section];
-      if (!headers) continue;
-
-      const data: Record<string, string> = {};
-      for (let i = 0; i < headers.length; i++) {
-        let header = headers[i];
-        if (header === 'T. Price') header = 'T-Price';
-        if (header === 'C. Price') header = 'C-Price';
-        data[header] = values[i] || '';
+      if (headerType === 'Header') {
+        sectionHeaders[section] = values;
+        continue;
       }
 
-      if (
-        section === 'Trades' &&
-        data['Asset Category'] === 'Stocks' &&
-        (data['DataDiscriminator'] === 'Order' || data['DataDiscriminator'] === 'Trade')
-      ) {
-        const trade = mapToTrade(data);
-        const key = `${trade.symbol}|${trade.dateTime}|${trade.quantity}|${trade.tPrice}`;
-        if (!tradesMap.has(key)) {
-          tradesMap.set(key, trade);
+      if (headerType === 'Data') {
+        const headers = sectionHeaders[section];
+        if (!headers) continue;
+
+        const data: Record<string, string> = {};
+        for (let i = 0; i < headers.length; i++) {
+          let header = headers[i];
+          if (header === 'T. Price') header = 'T-Price';
+          if (header === 'C. Price') header = 'C-Price';
+          data[header] = values[i] || '';
         }
-      } else if (section === 'Corporate Actions') {
-        const split = mapToSplit(data);
-        if (split) {
-          const key = `${split.symbol}|${split.date}`;
-          if (!splitsMap.has(key)) {
-            splitsMap.set(key, split);
+
+        if (
+          section === 'Trades' &&
+          data['Asset Category'] === 'Stocks' &&
+          (data['DataDiscriminator'] === 'Order' || data['DataDiscriminator'] === 'Trade')
+        ) {
+          const rawTrade = mapToTrade(data);
+          const trade = TradeSchema.parse(rawTrade);
+          const key = `${trade.symbol}|${trade.dateTime}|${trade.quantity}|${trade.tPrice}`;
+          if (!tradesMap.has(key)) {
+            tradesMap.set(key, trade);
           }
-        } else {
-          const spinoff = mapToSpinoff(data);
-          if (spinoff) {
-            spinoffs.push(spinoff);
+        } else if (section === 'Corporate Actions') {
+          const rawSplit = mapToSplit(data);
+          if (rawSplit) {
+            const split = SplitSchema.parse(rawSplit);
+            const key = `${split.symbol}|${split.date}`;
+            if (!splitsMap.has(key)) {
+              splitsMap.set(key, split);
+            }
+          } else {
+            const rawSpinoff = mapToSpinoff(data);
+            if (rawSpinoff) {
+              const spinoff = TradeSchema.parse(rawSpinoff);
+              spinoffs.push(spinoff);
+            }
           }
+        } else if (section === 'Dividends') {
+          const rawDiv = mapToDividend(data);
+          const div = DividendSchema.parse(rawDiv);
+          const key = `${div.symbol}|${div.date}|${div.amount}`;
+          if (!dividendsMap.has(key)) {
+            dividendsMap.set(key, div);
+          }
+        } else if (section === 'Net Asset Value' && data['Asset Class'] === 'Cash') {
+          cash = Number(data['Current Total'] || 0);
         }
-      } else if (section === 'Dividends') {
-        const div = mapToDividend(data);
-        const key = `${div.symbol}|${div.date}|${div.amount}`;
-        if (!dividendsMap.has(key)) {
-          dividendsMap.set(key, div);
-        }
-      } else if (section === 'Net Asset Value' && data['Asset Class'] === 'Cash') {
-        cash = Number(data['Current Total'] || 0);
       }
     }
   }
@@ -247,10 +249,10 @@ export function parseStatements(csv: string[]): StatementsData {
     };
   });
 
-  return {
+  return StatementsDataSchema.parse({
     trades: processedTrades,
     splits: Array.from(splitsMap.values()).sort((a, b) => a.date.localeCompare(b.date)),
     dividends: dividendsArr,
     cash,
-  };
+  });
 }

@@ -2,9 +2,9 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { HomePage } from './pages/HomePage';
 import { TickerDetailsPage } from './pages/TickerDetailsPage';
 import { AppStoreProvider } from './store/AppStoreProvider';
-import { parseStatements, getAllStatementLines } from './services/parser';
+import { parseStatements, getAllStatementContents } from './services/parser';
 
-const initialData = parseStatements(getAllStatementLines());
+const initialData = parseStatements(getAllStatementContents());
 
 function App() {
   return (
