@@ -1,15 +1,21 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { HomePage } from './pages/HomePage';
-import { EventsPage } from './pages/EventsPage';
+import { TickerDetailsPage } from './pages/TickerDetailsPage';
+import { AppStoreProvider } from './store/AppStoreProvider';
+import { parseStatements, getAllStatementLines } from './services/parser';
+
+const initialData = parseStatements(getAllStatementLines());
 
 function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/events/:symbol" element={<EventsPage />} />
-      </Routes>
-    </BrowserRouter>
+    <AppStoreProvider initialData={initialData}>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/details/:symbol" element={<TickerDetailsPage />} />
+        </Routes>
+      </BrowserRouter>
+    </AppStoreProvider>
   );
 }
 

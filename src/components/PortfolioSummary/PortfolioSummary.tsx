@@ -1,6 +1,6 @@
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import type { Trade } from '../../data/trades';
-import { sortSummary, calculateTotals, type TickerSummary, type SortConfig } from './logic';
+import cn from 'classnames';
+import { type TickerSummary, type PortfolioTotals } from '../../store/selectors';
+import { type SortConfig } from '../../hooks/useSortingConfig';
 import {
   Th,
   Td,
@@ -12,12 +12,7 @@ import {
   OverviewGrid,
 } from '../ui';
 import styles from './PortfolioSummary.module.css';
-import cn from 'classnames';
 import { formatMoney } from '../../utils/format';
-
-import { usePortfolioSummary } from '../../hooks/usePortfolioSummary';
-import { useCashBalance } from '../../hooks/useCashBalance';
-import { useSortingConfig } from '../../hooks/useSortingConfig';
 
 const SortableTh = ({
   column,
@@ -28,7 +23,7 @@ const SortableTh = ({
 }: {
   column: keyof TickerSummary;
   label: string;
-  sortConfig: SortConfig;
+  sortConfig: SortConfig<TickerSummary>;
   onSort: (key: keyof TickerSummary) => void;
   align?: 'left' | 'right' | 'center';
 }) => {
@@ -47,8 +42,21 @@ const SortableTh = ({
   );
 };
 
+export interface SummaryTableProps {
+  data: TickerSummary[];
+  title: string;
+  onRowClick: (symbol: string) => void;
+  sortConfig: SortConfig<TickerSummary>;
+  onSort: (key: keyof TickerSummary) => void;
+  totalPortfolioValue?: number;
+  showClosed: boolean;
+  onShowClosedChange: (val: boolean) => void;
+  totals: PortfolioTotals;
+}
+
 const SummaryTable = ({
   data,
+  totals,
   title,
   onRowClick,
   sortConfig,
@@ -56,19 +64,8 @@ const SummaryTable = ({
   totalPortfolioValue,
   showClosed,
   onShowClosedChange,
-}: {
-  data: TickerSummary[];
-  title: string;
-  onRowClick: (symbol: string) => void;
-  sortConfig: SortConfig;
-  onSort: (key: keyof TickerSummary) => void;
-  totalPortfolioValue?: number;
-  showClosed: boolean;
-  onShowClosedChange: (val: boolean) => void;
-}) => {
+}: SummaryTableProps) => {
   if (data.length === 0) return null;
-
-  const totals = calculateTotals(data);
 
   return (
     <div className={styles.summaryCard}>
@@ -207,32 +204,29 @@ const SummaryTable = ({
   );
 };
 
-export const PortfolioSummary = ({ trades }: { trades: Trade[] }) => {
-  const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
-  const { sortConfig, onSort } = useSortingConfig<TickerSummary>('marketValue');
+export interface PortfolioSummaryProps {
+  summary: TickerSummary[];
+  totals: PortfolioTotals;
+  cash: number;
+  totalValue: number;
+  showClosed: boolean;
+  onShowClosedChange: (val: boolean) => void;
+  sortConfig: SortConfig<TickerSummary>;
+  onSort: (key: keyof TickerSummary) => void;
+  onRowClick: (symbol: string) => void;
+}
 
-  const showClosed = searchParams.get('closed') === 'true';
-  const setShowClosed = (val: boolean) => {
-    setSearchParams((prev) => {
-      const next = new URLSearchParams(prev);
-      if (val) next.set('closed', 'true');
-      else next.delete('closed');
-      return next;
-    });
-  };
-
-  const cash = useCashBalance();
-  const summary = usePortfolioSummary(trades, cash);
-  const totals = calculateTotals(summary);
-  const totalValue = totals.marketValue + cash;
-
-  const filteredSummary = showClosed ? summary : summary.filter((item) => item.netQuantity !== 0);
-
-  const sortedSummary = sortSummary(filteredSummary, sortConfig);
-
-  const handleRowClick = (symbol: string) => navigate(`/events/${symbol}${window.location.search}`);
-
+export const PortfolioSummary = ({
+  summary,
+  totals,
+  cash,
+  totalValue,
+  showClosed,
+  onShowClosedChange,
+  sortConfig,
+  onSort,
+  onRowClick,
+}: PortfolioSummaryProps) => {
   return (
     <div className={styles.dashboardContainer}>
       <header className={styles.dashboardHeader}>
@@ -274,14 +268,15 @@ export const PortfolioSummary = ({ trades }: { trades: Trade[] }) => {
       </OverviewGrid>
 
       <SummaryTable
-        data={sortedSummary}
+        data={summary}
         title={showClosed ? 'All Positions' : 'Active Positions'}
-        onRowClick={handleRowClick}
+        onRowClick={onRowClick}
         sortConfig={sortConfig}
         onSort={onSort}
         totalPortfolioValue={totalValue}
         showClosed={showClosed}
-        onShowClosedChange={setShowClosed}
+        onShowClosedChange={onShowClosedChange}
+        totals={totals}
       />
     </div>
   );
